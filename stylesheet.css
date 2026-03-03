@@ -224,3 +224,50 @@
 .devwatch-cleanup-badge-idle-dev {
     color: #888888;
 }
+
+/* ── Snapshot section ─────────────────────────────────────────────────────────── */
+
+.devwatch-snapshot-row {
+    spacing: 6px;
+}
+
+.devwatch-snapshot-icon {
+    font-size: 13px;
+    padding-right: 2px;
+}
+
+.devwatch-snapshot-label {
+    font-size: 11px;
+    font-weight: bold;
+    color: #dddddd;
+}
+
+.devwatch-snapshot-save-button {
+    color: #57e389;
+    font-size: 11px;
+    padding: 0 6px;
+}
+
+.devwatch-snapshot-save-button:hover {
+    color: #ffffff;
+}
+
+.devwatch-snapshot-restore-button {
+    color: #78aeed;
+    font-size: 11px;
+    padding: 0 6px;
+}
+
+.devwatch-snapshot-restore-button:hover {
+    color: #ffffff;
+}
+
+.devwatch-snapshot-delete-button {
+    color: #888888;
+    font-size: 11px;
+    padding: 0 5px;
+}
+
+.devwatch-snapshot-delete-button:hover {
+    color: #ed333b;
+}
