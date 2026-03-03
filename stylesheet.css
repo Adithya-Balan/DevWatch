@@ -164,3 +164,63 @@
     color: #78aeed;
     font-size: 11px;
 }
+
+/* ── Cleanup section ──────────────────────────────────────────────────────────── */
+
+.devwatch-cleanup-row {
+    spacing: 6px;
+}
+
+.devwatch-cleanup-ok {
+    color: #57e389;
+    font-size: 11px;
+    font-style: italic;
+}
+
+.devwatch-clean-all-button {
+    color: #f8e45c;
+    font-size: 11px;
+    padding: 0 6px;
+}
+
+.devwatch-clean-all-button:hover {
+    color: #ed333b;
+}
+
+/* Reason icons */
+.devwatch-cleanup-icon {
+    font-size: 13px;
+    padding-right: 2px;
+}
+
+.devwatch-cleanup-icon-zombie {
+    color: #ed333b;
+}
+
+.devwatch-cleanup-icon-orphan {
+    color: #f8e45c;
+}
+
+.devwatch-cleanup-icon-idle-dev {
+    color: #888888;
+}
+
+/* Reason badges */
+.devwatch-cleanup-badge {
+    font-size: 9px;
+    font-weight: bold;
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+
+.devwatch-cleanup-badge-zombie {
+    color: #ed333b;
+}
+
+.devwatch-cleanup-badge-orphan {
+    color: #f8e45c;
+}
+
+.devwatch-cleanup-badge-idle-dev {
+    color: #888888;
+}
