@@ -19,6 +19,10 @@
  *   • CleanupEngine   — zombie / orphan / idle-dev detection
  *   • buildCleanupSection — Clean All + per-candidate Kill
  *   • Status dot: red on zombie OR port conflict, yellow on orphan/idle/highCPU
+ *
+ * Pillar 4 — fully wired:
+ *   • SnapshotManager  — save/list/load/restore/delete session JSON
+ *   • buildSnapshotSection — Save Now, Restore, Delete per snapshot row
  */
 
 import GLib from 'gi://GLib';
@@ -35,10 +39,12 @@ import { ProjectDetector }    from './core/projectDetector.js';
 import { ProcessTracker }     from './core/processTracker.js';
 import { PortMonitor }        from './core/portMonitor.js';
 import { ConflictNotifier }   from './core/conflictNotifier.js';
-import { CleanupEngine }      from './core/cleanupEngine.js';
+import { CleanupEngine }        from './core/cleanupEngine.js';
+import { SnapshotManager }      from './core/snapshotManager.js';
 import { buildProjectSection }  from './ui/projectSection.js';
 import { buildPortSection }     from './ui/portSection.js';
 import { buildCleanupSection }  from './ui/cleanupSection.js';
+import { buildSnapshotSection } from './ui/snapshotSection.js';
 
 /** Background poll interval in seconds */
 const POLL_INTERVAL_S = 10;
@@ -58,6 +64,13 @@ export default class DevWatchExtension extends Extension {
         this._portMonitor       = new PortMonitor();
         this._conflictNotifier  = new ConflictNotifier();
         this._cleanupEngine     = new CleanupEngine();
+        this._snapshotManager   = new SnapshotManager();
+
+        /** Cached from last _refresh() — used by Save Now button. */
+        this._lastProjectMap  = null;
+        this._lastPortResult  = null;
+        /** Most recent snapshot list for the UI. */
+        this._snapshots       = [];
 
         this._projectDetector.onProjectChanged(_info => {
             // React immediately when the focused project changes
@@ -67,6 +80,7 @@ export default class DevWatchExtension extends Extension {
         this._projectDetector.start(this._cancellable);
         this._processTracker.start(this._cancellable);
         this._portMonitor.start(this._cancellable);
+        this._snapshotManager.start(this._cancellable);
 
         // ── Panel Indicator ────────────────────────────────────────────
         this._indicator = new PanelMenu.Button(0.0, this.metadata.name, false);
@@ -151,6 +165,12 @@ export default class DevWatchExtension extends Extension {
         this._cleanupEngine?.destroy();
         this._cleanupEngine = null;
 
+        this._snapshotManager?.stop();
+        this._snapshotManager = null;
+        this._lastProjectMap  = null;
+        this._lastPortResult  = null;
+        this._snapshots       = null;
+
         // Cancel all in-flight async operations
         this._cancellable?.cancel();
         this._cancellable = null;
@@ -195,6 +215,19 @@ export default class DevWatchExtension extends Extension {
 
         if (!this._indicator) return;
 
+        // Cache for Save Now button (used outside _refresh)
+        this._lastProjectMap = projectMap;
+        this._lastPortResult = portResult;
+
+        // Fetch snapshot list (async, best-effort — never blocks the UI)
+        try {
+            this._snapshots = await this._snapshotManager.list();
+        } catch (e) {
+            if (!this._isCancelled(e)) this._logError(e);
+        }
+
+        if (!this._indicator) return;
+
         // Fire conflict notifications for newly occupied dev ports
         const activePids = new Set(
             [...projectMap.values()].flatMap(p => p.processes.map(pr => pr.pid))
@@ -210,7 +243,7 @@ export default class DevWatchExtension extends Extension {
             ? this._cleanupEngine.analyse(projectMap, portPids)
             : { candidates: [], scannedAt: 0 };
 
-        // Rebuild all three sections
+        // Rebuild all four sections
         buildProjectSection(this._indicator.menu, projectMap);
         buildPortSection(
             this._indicator.menu,
@@ -222,9 +255,53 @@ export default class DevWatchExtension extends Extension {
             cleanupResult,
             pid => this._killProcess(pid, null)
         );
+        buildSnapshotSection(
+            this._indicator.menu,
+            this._snapshots ?? [],
+            {
+                onSave:    ()   => this._saveSnapshot(),
+                onRestore: fn  => this._restoreSnapshot(fn),
+                onDelete:  fn  => this._deleteSnapshot(fn),
+            }
+        );
 
         // Update status dot colour
         this._updateStatusDot(projectMap, portResult, cleanupResult);
+    }
+
+    /**
+     * Save current session as a snapshot and refresh the snapshot list.
+     */
+    _saveSnapshot() {
+        if (!this._snapshotManager) return;
+        this._snapshotManager
+            .save(this._lastProjectMap ?? new Map(), this._lastPortResult ?? { ports: [], newPorts: [] })
+            .then(() => this._refresh())
+            .catch(e => this._logError(e));
+    }
+
+    /**
+     * Restore a named snapshot (opens terminals at saved project roots).
+     * @param {string} filename
+     */
+    _restoreSnapshot(filename) {
+        if (!this._snapshotManager) return;
+        this._snapshotManager
+            .load(filename)
+            .then(data => data ? this._snapshotManager.restore(data) : null)
+            .catch(e => this._logError(e));
+    }
+
+    /**
+     * Delete a named snapshot file and refresh the snapshot list.
+     * @param {string} filename
+     */
+    _deleteSnapshot(filename) {
+        if (!this._snapshotManager) return;
+        this._snapshotManager
+            .delete(filename)
+            .then(() => this._refresh())
+            .catch(e => this._logError(e));
     }
 
     /**
