@@ -83,6 +83,13 @@ export class ProcessTracker {
         this._prevPidJiffies = new Map();
 
         /**
+         * Fast pid → projectRoot index, rebuilt on each scan().
+         * Used by PortMonitor.getProjectRootForPid() without extra git calls.
+         * @type {Map<number, string>}
+         */
+        this._pidProjectIndex = new Map();
+
+        /**
          * Previous total system CPU jiffies (from /proc/stat).
          * @type {number}
          */
@@ -104,6 +111,21 @@ export class ProcessTracker {
         this._cwdCache.clear();
         this._prevPidJiffies.clear();
         this._prevTotalJiffies = 0;
+        this._pidProjectIndex.clear();
+    }
+
+    /**
+     * Look up a project root for a given PID using the CWD cache populated
+     * during the last scan(). Used by PortMonitor for port→project mapping
+     * without triggering additional git calls.
+     *
+     * @param {number} pid
+     * @returns {string|null}
+     */
+    getProjectRootForPid(pid) {
+        // We need the cwd for this pid from the last scan.
+        // Store a pid→projectRoot index alongside the cwd cache.
+        return this._pidProjectIndex?.get(pid) ?? null;
     }
 
     /**
@@ -149,6 +171,13 @@ export class ProcessTracker {
 
         // Resolve each process's CWD to a project root (async, cached)
         await this._resolveProjectRoots(rawProcesses);
+
+        // Rebuild the pid→projectRoot index for PortMonitor
+        this._pidProjectIndex.clear();
+        for (const proc of rawProcesses) {
+            if (proc.projectRoot)
+                this._pidProjectIndex.set(proc.pid, proc.projectRoot);
+        }
 
         // Group by project root
         /** @type {Map<string, ProjectData>} */
