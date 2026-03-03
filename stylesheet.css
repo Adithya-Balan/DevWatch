@@ -73,3 +73,42 @@
     font-size: 11px;
     padding: 0 6px;
 }
+
+/* ── Project section ───────────────────────────────────────────────────────── */
+
+.devwatch-project-header {
+    spacing: 8px;
+}
+
+.devwatch-process-row {
+    spacing: 8px;
+}
+
+/* Process state badges */
+.devwatch-state {
+    font-size: 9px;
+    font-weight: bold;
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+
+.devwatch-state-running {
+    color: #57e389;
+}
+
+.devwatch-state-sleeping {
+    color: #aaaaaa;
+}
+
+.devwatch-state-waiting {
+    color: #f8e45c;
+}
+
+.devwatch-state-zombie {
+    color: #ed333b;
+    font-weight: bold;
+}
+
+.devwatch-state-stopped {
+    color: #c0bfbc;
+}
