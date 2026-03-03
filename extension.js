@@ -21,9 +21,10 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
-import { ProjectDetector } from './core/projectDetector.js';
-import { ProcessTracker }  from './core/processTracker.js';
-import { PortMonitor }     from './core/portMonitor.js';
+import { ProjectDetector }    from './core/projectDetector.js';
+import { ProcessTracker }     from './core/processTracker.js';
+import { PortMonitor }        from './core/portMonitor.js';
+import { ConflictNotifier }   from './core/conflictNotifier.js';
 import { buildProjectSection } from './ui/projectSection.js';
 import { buildPortSection }   from './ui/portSection.js';
 
@@ -40,9 +41,10 @@ export default class DevWatchExtension extends Extension {
         this._cancellable = new Gio.Cancellable();
 
         // ── Core modules ───────────────────────────────────────────────
-        this._projectDetector = new ProjectDetector();
-        this._processTracker  = new ProcessTracker();
-        this._portMonitor     = new PortMonitor();
+        this._projectDetector   = new ProjectDetector();
+        this._processTracker    = new ProcessTracker();
+        this._portMonitor       = new PortMonitor();
+        this._conflictNotifier  = new ConflictNotifier();
 
         this._projectDetector.onProjectChanged(_info => {
             // React immediately when the focused project changes
@@ -130,6 +132,9 @@ export default class DevWatchExtension extends Extension {
         this._portMonitor?.stop();
         this._portMonitor = null;
 
+        this._conflictNotifier?.destroy();
+        this._conflictNotifier = null;
+
         // Cancel all in-flight async operations
         this._cancellable?.cancel();
         this._cancellable = null;
@@ -173,6 +178,13 @@ export default class DevWatchExtension extends Extension {
         }
 
         if (!this._indicator) return;
+
+        // Fire conflict notifications for newly occupied dev ports
+        const activePids = new Set(
+            [...projectMap.values()].flatMap(p => p.processes.map(pr => pr.pid))
+        );
+        this._conflictNotifier?.pruneNotified(activePids);
+        this._conflictNotifier?.notify(portResult.newPorts);
 
         // Rebuild both sections
         buildProjectSection(this._indicator.menu, projectMap);
