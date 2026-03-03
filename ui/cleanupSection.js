@@ -30,6 +30,7 @@ import GLib from 'gi://GLib';
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
+import { _ } from '../utils/i18n.js';
 
 const SECTION_TAG = 'devwatch-cleanup';
 
@@ -65,7 +66,7 @@ export function buildCleanupSection(menu, cleanupResult, onKill) {
     });
 
     const titleLabel = new St.Label({
-        text: 'CLEANUP CANDIDATES',
+        text: _('CLEANUP CANDIDATES'),
         style_class: 'devwatch-section-title',
         x_expand: true,
         y_align: Clutter.ActorAlign.CENTER,
@@ -76,7 +77,7 @@ export function buildCleanupSection(menu, cleanupResult, onKill) {
     const killable = candidates.filter(c => c.reason !== 'zombie'); // zombies can't be kill'd by us
     if (killable.length > 0) {
         const cleanAllBtn = new St.Button({
-            label: `Clean All (${killable.length})`,
+            label: _('Clean All (%d)').format(killable.length),
             style_class: 'devwatch-clean-all-button',
             y_align: Clutter.ActorAlign.CENTER,
             reactive: true,
@@ -95,7 +96,7 @@ export function buildCleanupSection(menu, cleanupResult, onKill) {
 
     // ── Empty state ────────────────────────────────────────────────────────
     if (candidates.length === 0) {
-        const ok = new PopupMenu.PopupMenuItem('  ✓ No cleanup candidates', { reactive: false });
+        const ok = new PopupMenu.PopupMenuItem(_('  ✓ No cleanup candidates'), { reactive: false });
         ok.label.style_class = 'devwatch-cleanup-ok';
         ok._devwatchSection = SECTION_TAG;
         menu.addMenuItem(ok);

@@ -35,7 +35,7 @@ import Gio from 'gi://Gio';
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 
-import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
+import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
@@ -61,7 +61,8 @@ export default class DevWatchExtension extends Extension {
         super(metadata);
     }
 
-    enable() {
+    enable() {        // Initialise translations before any string is rendered
+        this.initTranslations();
         // ── Cancellable — shared across all async operations ───────────
         this._cancellable = new Gio.Cancellable();
 
@@ -397,7 +398,7 @@ export default class DevWatchExtension extends Extension {
         const menu = this._indicator.menu;
 
         // Header
-        const header = new PopupMenu.PopupMenuItem('DevWatch', { reactive: false });
+        const header = new PopupMenu.PopupMenuItem(_('DevWatch'), { reactive: false });
         header.label.style_class = 'devwatch-menu-header';
         menu.addMenuItem(header);
 
@@ -409,7 +410,7 @@ export default class DevWatchExtension extends Extension {
         // (No static placeholder needed — buildPortSection shows its own empty state)
 
         // Footer
-        menu.addAction('Refresh Now', () => {
+        menu.addAction(_('Refresh Now'), () => {
             this._refresh().catch(e => this._logError(e));
         });
     }

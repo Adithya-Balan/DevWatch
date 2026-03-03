@@ -31,6 +31,7 @@ import GLib from 'gi://GLib';
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
+import { _ } from '../utils/i18n.js';
 
 const SECTION_TAG = 'devwatch-perf';
 
@@ -53,7 +54,7 @@ export function buildPerfSection(menu, buildResult, maxRows = DEFAULT_MAX_HISTOR
     const history = buildResult?.history ?? new Map();
 
     // ── Section title ──────────────────────────────────────────────────────
-    const title = new PopupMenu.PopupMenuItem('BUILD PERFORMANCE', { reactive: false });
+    const title = new PopupMenu.PopupMenuItem(_('BUILD PERFORMANCE'), { reactive: false });
     title.label.style_class = 'devwatch-section-title';
     title._devwatchSection = SECTION_TAG;
     menu.addMenuItem(title);
@@ -80,7 +81,7 @@ export function buildPerfSection(menu, buildResult, maxRows = DEFAULT_MAX_HISTOR
     if (shown.length > 0) {
         if (active.length > 0) {
             // Thin separator between active and history
-            const miniSep = new PopupMenu.PopupMenuItem('RECENT BUILDS', { reactive: false });
+            const miniSep = new PopupMenu.PopupMenuItem(_('RECENT BUILDS'), { reactive: false });
             miniSep.label.style_class = 'devwatch-perf-history-header';
             miniSep._devwatchSection = SECTION_TAG;
             menu.addMenuItem(miniSep);
@@ -103,7 +104,7 @@ export function buildPerfSection(menu, buildResult, maxRows = DEFAULT_MAX_HISTOR
         }
     } else if (active.length === 0) {
         // Completely idle
-        const empty = new PopupMenu.PopupMenuItem('  No active builds detected', { reactive: false });
+        const empty = new PopupMenu.PopupMenuItem(_('  No active builds detected'), { reactive: false });
         empty.label.style_class = 'devwatch-dim';
         empty._devwatchSection = SECTION_TAG;
         menu.addMenuItem(empty);

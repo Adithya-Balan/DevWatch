@@ -1,0 +1,9 @@
+# List of source files containing translatable strings.
+# Used by xgettext to build the .pot template.
+extension.js
+prefs.js
+ui/projectSection.js
+ui/portSection.js
+ui/cleanupSection.js
+ui/snapshotSection.js
+ui/perfSection.js

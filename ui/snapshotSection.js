@@ -29,6 +29,7 @@
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
+import { _ } from '../utils/i18n.js';
 
 const SECTION_TAG = 'devwatch-snapshots';
 
@@ -57,7 +58,7 @@ export function buildSnapshotSection(menu, snapshots, callbacks) {
     });
 
     const titleLabel = new St.Label({
-        text: 'SESSION SNAPSHOTS',
+        text: _('SESSION SNAPSHOTS'),
         style_class: 'devwatch-section-title',
         x_expand: true,
         y_align: Clutter.ActorAlign.CENTER,
@@ -65,7 +66,7 @@ export function buildSnapshotSection(menu, snapshots, callbacks) {
     titleRow.add_child(titleLabel);
 
     const saveBtn = new St.Button({
-        label: 'Save Now',
+        label: _('Save Now'),
         style_class: 'devwatch-snapshot-save-button',
         y_align: Clutter.ActorAlign.CENTER,
         reactive: true,

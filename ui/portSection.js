@@ -24,6 +24,7 @@ import GLib from 'gi://GLib';
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
+import { _ } from '../utils/i18n.js';
 
 const SECTION_TAG = 'devwatch-ports';
 
@@ -46,7 +47,7 @@ export function buildPortSection(menu, scanResult, onKill, showSystemPorts = fal
     clearPortSection(menu);
 
     // ── Section title ──────────────────────────────────────────────────────
-    const title = new PopupMenu.PopupMenuItem('ACTIVE PORTS', { reactive: false });
+    const title = new PopupMenu.PopupMenuItem(_('ACTIVE PORTS'), { reactive: false });
     title.label.style_class = 'devwatch-section-title';
     title._devwatchSection = SECTION_TAG;
     menu.addMenuItem(title);
@@ -54,7 +55,7 @@ export function buildPortSection(menu, scanResult, onKill, showSystemPorts = fal
     const ports = scanResult?.ports ?? [];
 
     if (ports.length === 0) {
-        const empty = new PopupMenu.PopupMenuItem('  No listening ports detected', { reactive: false });
+        const empty = new PopupMenu.PopupMenuItem(_('  No listening ports detected'), { reactive: false });
         empty.label.style_class = 'devwatch-dim';
         empty._devwatchSection = SECTION_TAG;
         menu.addMenuItem(empty);

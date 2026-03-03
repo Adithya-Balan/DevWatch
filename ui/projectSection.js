@@ -24,6 +24,7 @@ import Gio from 'gi://Gio';
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
+import { _ } from '../utils/i18n.js';
 
 // Tags used to identify items belonging to this section (for targeted removal)
 const SECTION_TAG = 'devwatch-projects';
@@ -41,20 +42,20 @@ export function buildProjectSection(menu, projectMap) {
     clearProjectSection(menu);
 
     // ── Section title ──────────────────────────────────────────────────────
-    const title = new PopupMenu.PopupMenuItem('ACTIVE PROJECTS', { reactive: false });
+    const title = new PopupMenu.PopupMenuItem(_('ACTIVE PROJECTS'), { reactive: false });
     title.label.style_class = 'devwatch-section-title';
     title._devwatchSection = SECTION_TAG;
     menu.addMenuItem(title);
 
     if (!projectMap || projectMap.size === 0) {
         // Empty state
-        const empty = new PopupMenu.PopupMenuItem('  No dev projects detected', { reactive: false });
+        const empty = new PopupMenu.PopupMenuItem(_('  No dev projects detected'), { reactive: false });
         empty.label.style_class = 'devwatch-dim';
         empty._devwatchSection = SECTION_TAG;
         menu.addMenuItem(empty);
 
         const hint = new PopupMenu.PopupMenuItem(
-            '  Focus a terminal or editor window to detect a project',
+            _('  Focus a terminal or editor window to detect a project'),
             { reactive: false }
         );
         hint.label.style_class = 'devwatch-dim';

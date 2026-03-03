@@ -59,3 +59,50 @@ status:
 .PHONY: nested
 nested:
 	dbus-run-session gnome-shell --devkit --wayland
+
+# ── i18n helpers ──────────────────────────────────────────────────────────────
+
+DOMAIN  := devwatch@github.io
+POT     := po/$(DOMAIN).pot
+
+# Extract translatable strings from all source files listed in po/POTFILES.
+# Run after adding new _('...') calls to update the translation template.
+.PHONY: pot
+pot:
+	@xgettext \
+	  --from-code=UTF-8 \
+	  --language=JavaScript \
+	  --keyword=_ \
+	  --keyword=ngettext:1,2 \
+	  --keyword=pgettext:1c,2 \
+	  --output=$(POT) \
+	  $(shell cat po/POTFILES | grep -v '^#' | grep -v '^$$')
+	@echo "  Updated: $(POT)"
+
+# Merge each existing .po file with the latest .pot template.
+# Run after `make pot` to propagate new strings to translators.
+.PHONY: update-po
+update-po: pot
+	@for lang in $$(cat po/LINGUAS | grep -v '^#' | grep -v '^$$'); do \
+	  pofile="po/$$lang.po"; \
+	  if [ -f "$$pofile" ]; then \
+	    msgmerge --update "$$pofile" $(POT); \
+	    echo "  Updated: $$pofile"; \
+	  else \
+	    msginit --input=$(POT) --locale=$$lang --output="$$pofile" --no-translator; \
+	    echo "  Created: $$pofile"; \
+	  fi; \
+	done
+
+# Compile all .po files listed in po/LINGUAS into binary .mo files,
+# installed under locale/ so that initTranslations() can find them.
+.PHONY: compile-mo
+compile-mo:
+	@for lang in $$(cat po/LINGUAS | grep -v '^#' | grep -v '^$$'); do \
+	  pofile="po/$$lang.po"; \
+	  modir="locale/$$lang/LC_MESSAGES"; \
+	  mofile="$$modir/$(DOMAIN).mo"; \
+	  mkdir -p "$$modir"; \
+	  msgfmt "$$pofile" -o "$$mofile"; \
+	  echo "  Compiled: $$mofile"; \
+	done
