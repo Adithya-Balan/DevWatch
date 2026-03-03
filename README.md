@@ -36,9 +36,10 @@ DevWatch fills that gap by mapping running system processes back to your develop
 - Groups running processes by project directory
 - Shows per-project aggregate CPU, memory, and runtime
 
-### Pillar 2 — Intelligent Port & Service Control
+### Pillar 2 — Intelligent Port & Service Control ✅
 - Live monitoring of all listening ports via `ss -tulnp`
-- Conflict detection with contextual GNOME notifications
+- Dev ports (3000, 5173, 8080, …) highlighted and separated from system ports
+- Conflict detection with GNOME notifications when a dev port is newly occupied
 - One-click kill, copy PID, open terminal at project root
 
 ### Pillar 3 — Dev Environment Cleanup Engine
@@ -114,19 +115,19 @@ DevWatch/
 ├── stylesheet.css        ← St widget CSS
 ├── Makefile              ← Dev helpers (link, enable, log, nested)
 ├── ui/
-│   ├── indicator.js      ← Panel button + status dot
-│   ├── projectSection.js ← Active Projects section
-│   ├── portSection.js    ← Active Ports section
-│   ├── cleanupSection.js ← Cleanup Engine UI
-│   ├── snapshotSection.js← Session Snapshot controls
-│   └── perfSection.js    ← Performance Summary
+│   ├── projectSection.js ← Active Projects section (process rows + Open Terminal)
+│   ├── portSection.js    ← Active Ports section (Kill + Copy PID buttons)
+│   ├── cleanupSection.js ← Cleanup Engine UI           (Pillar 3 — planned)
+│   ├── snapshotSection.js← Session Snapshot controls   (Pillar 4 — planned)
+│   └── perfSection.js    ← Performance Summary         (Pillar 5 — planned)
 ├── core/
 │   ├── projectDetector.js← Git root + window focus tracking
 │   ├── processTracker.js ← /proc traversal, process→project mapping
-│   ├── portMonitor.js    ← ss -tulnp parsing + conflict detection
-│   ├── cleanupEngine.js  ← Orphan/zombie detection
-│   ├── snapshotManager.js← Save/restore session JSON
-│   └── buildDetector.js  ← Build detection + resource spike recording
+│   ├── portMonitor.js    ← ss -tulnp parsing + runtime tracking + conflict detection
+│   ├── conflictNotifier.js ← GNOME notifications for newly occupied dev ports
+│   ├── cleanupEngine.js  ← Orphan/zombie detection     (Pillar 3 — planned)
+│   ├── snapshotManager.js← Save/restore session JSON   (Pillar 4 — planned)
+│   └── buildDetector.js  ← Build detection + resource spike recording (Pillar 5 — planned)
 └── utils/
     ├── subprocess.js     ← Async execCommunicate() helper
     └── procReader.js     ← /proc file read helpers
@@ -204,7 +205,11 @@ Use [GitHub Issues](https://github.com/Adithya-Balan/DevWatch/issues). Include:
 - [x] `core/processTracker.js` — `/proc` scan with project-grouped CPU/RAM (Step 5)
 - [x] `ui/projectSection.js` — Active Projects dropdown renderer (Step 6)
 - [x] **Pillar 1 complete** — Live project-aware process intelligence (Step 7)
-- [ ] Pillar 2: Port monitoring + conflict detection
+- [x] `core/portMonitor.js` — `ss -tulnp` parser + dev-port detection + conflict tracking (Step 8)
+- [x] `ui/portSection.js` — Active Ports renderer with Kill button (Step 9)
+- [x] `core/conflictNotifier.js` — GNOME notifications on newly occupied dev ports (Step 10)
+- [x] One-click Copy PID + Open Terminal at project root (Step 11)
+- [x] **Pillar 2 complete** — Intelligent port & service control (Step 12)
 - [ ] Pillar 3: Dev environment cleanup engine
 - [ ] Pillar 4: Session snapshot & restore
 - [ ] Pillar 5: Build performance intelligence
