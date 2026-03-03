@@ -42,9 +42,12 @@ DevWatch fills that gap by mapping running system processes back to your develop
 - Conflict detection with GNOME notifications when a dev port is newly occupied
 - One-click kill, copy PID, open terminal at project root
 
-### Pillar 3 — Dev Environment Cleanup Engine
-- Identifies zombie and orphaned dev processes (detached, idle, parentless)
-- Single-click "Clean Dev State" with optional confirmation list
+### Pillar 3 — Dev Environment Cleanup Engine ✅
+- Detects **zombie** processes (un-reaped, state `Z`)
+- Detects **orphan** dev tools (parent gone, no project root)
+- Detects **idle dev tools** (<0.5% CPU for >10 min, no open port)
+- Per-candidate Kill button; bulk **Clean All** action
+- Status dot turns **red** on zombie/orphan, **yellow** on idle tools
 
 ### Pillar 4 — Dev Session Snapshot & Restore
 - Captures running processes, ports, active git branches
@@ -117,7 +120,7 @@ DevWatch/
 ├── ui/
 │   ├── projectSection.js ← Active Projects section (process rows + Open Terminal)
 │   ├── portSection.js    ← Active Ports section (Kill + Copy PID buttons)
-│   ├── cleanupSection.js ← Cleanup Engine UI           (Pillar 3 — planned)
+│   ├── cleanupSection.js ← Cleanup Candidates section (Clean All + Kill per row)
 │   ├── snapshotSection.js← Session Snapshot controls   (Pillar 4 — planned)
 │   └── perfSection.js    ← Performance Summary         (Pillar 5 — planned)
 ├── core/
@@ -125,7 +128,7 @@ DevWatch/
 │   ├── processTracker.js ← /proc traversal, process→project mapping
 │   ├── portMonitor.js    ← ss -tulnp parsing + runtime tracking + conflict detection
 │   ├── conflictNotifier.js ← GNOME notifications for newly occupied dev ports
-│   ├── cleanupEngine.js  ← Orphan/zombie detection     (Pillar 3 — planned)
+│   ├── cleanupEngine.js  ← Zombie / orphan / idle-dev detection + candidate scoring
 │   ├── snapshotManager.js← Save/restore session JSON   (Pillar 4 — planned)
 │   └── buildDetector.js  ← Build detection + resource spike recording (Pillar 5 — planned)
 └── utils/
@@ -210,7 +213,10 @@ Use [GitHub Issues](https://github.com/Adithya-Balan/DevWatch/issues). Include:
 - [x] `core/conflictNotifier.js` — GNOME notifications on newly occupied dev ports (Step 10)
 - [x] One-click Copy PID + Open Terminal at project root (Step 11)
 - [x] **Pillar 2 complete** — Intelligent port & service control (Step 12)
-- [ ] Pillar 3: Dev environment cleanup engine
+- [x] `core/cleanupEngine.js` — zombie / orphan / idle-dev candidate detection (Step 13)
+- [x] `ui/cleanupSection.js` — Cleanup Candidates renderer with Clean All + Kill (Step 14)
+- [x] Pillar 3 wired into extension.js + status dot updated (Step 15)
+- [x] **Pillar 3 complete** — Dev environment cleanup engine (Step 16)
 - [ ] Pillar 4: Session snapshot & restore
 - [ ] Pillar 5: Build performance intelligence
 - [ ] Preferences UI (`prefs.js`)
