@@ -15,7 +15,7 @@ SRC      := $(shell pwd)
 # Re-link every source file in the project to the GNOME extensions directory.
 # Run `make link` once after adding any new .js / .css / .json file.
 .PHONY: link
-link:
+link: compile-schemas
 	@mkdir -p $(INSTALL)
 	@for f in $(SRC)/*.js $(SRC)/*.css $(SRC)/*.json; do \
 	  [ -f "$$f" ] || continue; \
@@ -25,12 +25,18 @@ link:
 	@for d in ui core utils schemas; do \
 	  [ -d "$(SRC)/$$d" ] || continue; \
 	  mkdir -p "$(INSTALL)/$$d"; \
-	  for f in "$(SRC)/$$d"/*.js; do \
+	  for f in "$(SRC)/$$d"/*; do \
 	    [ -f "$$f" ] || continue; \
 	    ln -sf "$$f" "$(INSTALL)/$$d/$$(basename $$f)"; \
 	    echo "  Linked: $$d/$$(basename $$f)"; \
 	  done; \
 	done
+
+# Compile GSettings schemas (required whenever the .gschema.xml changes)
+.PHONY: compile-schemas
+compile-schemas:
+	@glib-compile-schemas $(SRC)/schemas/
+	@echo "  Schemas compiled."
 
 # Pack the extension into a distributable zip
 .PHONY: pack
