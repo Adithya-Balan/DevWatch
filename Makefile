@@ -13,23 +13,23 @@ INSTALL  := $(HOME)/.local/share/gnome-shell/extensions/$(UUID)
 SRC      := $(shell pwd)
 
 # Re-link every source file in the project to the GNOME extensions directory.
-# Run this once after adding any new .js / .css / .json file to the project.
+# Run `make link` once after adding any new .js / .css / .json file.
 .PHONY: link
 link:
 	@mkdir -p $(INSTALL)
-	@find $(SRC) -maxdepth 1 -name "*.js" -o -name "*.css" -o -name "*.json" | \
-	  grep -v node_modules | grep -v "\.zip" | while read f; do \
-	    ln -sf "$$f" "$(INSTALL)/$$(basename $$f)"; \
-	    echo "  Linked: $$(basename $$f)"; \
-	  done
+	@for f in $(SRC)/*.js $(SRC)/*.css $(SRC)/*.json; do \
+	  [ -f "$$f" ] || continue; \
+	  ln -sf "$$f" "$(INSTALL)/$$(basename $$f)"; \
+	  echo "  Linked: $$(basename $$f)"; \
+	done
 	@for d in ui core utils schemas; do \
-	  if [ -d "$(SRC)/$$d" ]; then \
-	    mkdir -p "$(INSTALL)/$$d"; \
-	    find "$(SRC)/$$d" -name "*.js" | while read f; do \
-	      ln -sf "$$f" "$(INSTALL)/$$d/$$(basename $$f)"; \
-	      echo "  Linked: $$d/$$(basename $$f)"; \
-	    done; \
-	  fi; \
+	  [ -d "$(SRC)/$$d" ] || continue; \
+	  mkdir -p "$(INSTALL)/$$d"; \
+	  for f in "$(SRC)/$$d"/*.js; do \
+	    [ -f "$$f" ] || continue; \
+	    ln -sf "$$f" "$(INSTALL)/$$d/$$(basename $$f)"; \
+	    echo "  Linked: $$d/$$(basename $$f)"; \
+	  done; \
 	done
 
 # Pack the extension into a distributable zip
