@@ -72,7 +72,8 @@ export function clearPortSection(menu) {
 
 function _buildRow(record, onKill) {
     const item = new PopupMenu.PopupMenuItem('', { reactive: false });
-    const row  = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER, spacing: 8 });
+    const row  = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER})
+    row.spacing = 8;
 
     // Active dot
     row.add_child(new St.Label({

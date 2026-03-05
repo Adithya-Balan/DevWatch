@@ -36,9 +36,9 @@ export function buildHealthSummary(menu, projectMap, portResult, onRefresh) {
     const infoBox = new St.BoxLayout({
         vertical: true,
         x_expand: true,
-        y_align: Clutter.ActorAlign.CENTER,
-        spacing: 2,
-    });
+        y_align: Clutter.ActorAlign.CENTER
+    })
+    infoBox.spacing = 2;
     infoBox.add_child(new St.Label({ text: 'DevWatch', style_class: 'dw-summary-title' }));
 
     // stats line: "4 projects running · 3 ports open · 4.1 GB RAM"

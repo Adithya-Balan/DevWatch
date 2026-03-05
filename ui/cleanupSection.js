@@ -69,7 +69,8 @@ export function clearCleanupSection(menu) {
 
 function _buildRow(c, onKill, now) {
     const item = new PopupMenu.PopupMenuItem('', { reactive: false });
-    const row  = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER, spacing: 8 });
+    const row  = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER})
+    row.spacing = 8;
 
     // Human-readable description
     const desc = _describe(c, now);

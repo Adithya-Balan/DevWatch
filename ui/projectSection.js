@@ -78,7 +78,8 @@ function _buildProjectRow(project, pidToPort) {
     sub.label.text = '';
 
     // ── Level 1 header ─────────────────────────────────────────────────────
-    const header = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER, spacing: 4 });
+    const header = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER})
+    header.spacing = 4;
 
     // Health dot
     const dot = new St.Label({
@@ -118,7 +119,8 @@ function _buildProjectRow(project, pidToPort) {
 
     // ── Actions ────────────────────────────────────────────────────────────
     const actionsItem = new PopupMenu.PopupMenuItem('', { reactive: false });
-    const actionsRow = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER, spacing: 6 });
+    const actionsRow = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER})
+    actionsRow.spacing = 6;
 
     const stopBtn = new St.Button({
         label: '⏹  Stop Project',
@@ -145,7 +147,8 @@ function _buildProjectRow(project, pidToPort) {
 
 function _buildServiceRow(svc) {
     const item = new PopupMenu.PopupMenuItem('', { reactive: false });
-    const row  = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER, spacing: 8 });
+    const row  = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER})
+    row.spacing = 8;
 
     row.add_child(new St.Label({ text: svc.displayName, style_class: 'dw-service-name' }));
 

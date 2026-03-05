@@ -68,7 +68,8 @@ export function clearSnapshotSection(menu) {
 
 function _buildRow(snap, onRestore, onDelete) {
     const item = new PopupMenu.PopupMenuItem('', { reactive: false });
-    const row  = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER, spacing: 8 });
+    const row  = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER})
+    row.spacing = 8;
 
     row.add_child(new St.Label({ text: _truncate(snap.label ?? 'auto', 22), style_class: 'dw-snap-name' }));
     row.add_child(new St.Label({ text: _formatDate(snap.savedAt), style_class: 'dw-snap-meta' }));
