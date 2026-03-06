@@ -304,33 +304,40 @@ export class SnapshotManager {
             }
 
             // ── Prefer VS Code integrated terminal ─────────────────────────
-            // If VS Code / Codium is the editor, write a temporary workspace
-            // file that runs each service as a task inside VS Code's integrated
-            // terminal (runOn: "folderOpen").  Falls back to gnome-terminal if
-            // anything goes wrong.
-            const vscodeEd = (proj.editors ?? []).find(
-                e => e.app === 'code' || e.app === 'codium'
-            );
-            if (vscodeEd && runnableServices.length > 0) {
-                const wsFile = this._writeVscodeWorkspace(proj, runnableServices);
-                if (wsFile) {
-                    try {
-                        const launcher = new Gio.SubprocessLauncher({ flags: Gio.SubprocessFlags.NONE });
-                        launcher.spawnv([vscodeEd.exec, wsFile]);
-                        console.log(`[DevWatch:SnapshotManager] Opened VS Code workspace: ${wsFile}`);
-                        launched += runnableServices.length;
-                        editors++;
-                        for (const svc of runnableServices)
-                            if (svc.port && svc.port >= 1024) this._openBrowserTab(svc.port);
-                        continue; // fully handled — skip fallback below
-                    } catch (e) {
-                        console.warn('[DevWatch:SnapshotManager] VS Code workspace launch failed:', e.message);
-                    }
+            // Check $PATH at restore time — snapshot may not have captured the
+            // VS Code process if it was open under a different PID tree.
+            // Write DevWatch service commands to .vscode/tasks.json so they run
+            // inside VS Code's integrated terminal (runOn: "folderOpen").
+            // Trust is at the folder level, so the dialog only appears once.
+            const vscodeExec =
+                GLib.find_program_in_path('code') ??
+                GLib.find_program_in_path('code-oss') ??
+                GLib.find_program_in_path('codium') ??
+                (proj.editors ?? []).find(e => e.app === 'code' || e.app === 'codium')?.exec ??
+                null;
+
+            if (vscodeExec) {
+                if (runnableServices.length > 0)
+                    this._writeVscodeTasks(proj, runnableServices);
+                try {
+                    const launcher = new Gio.SubprocessLauncher({ flags: Gio.SubprocessFlags.NONE });
+                    launcher.set_environ(GLib.get_environ()); // required: passes WAYLAND_DISPLAY / DISPLAY
+                    launcher.spawnv([vscodeExec, proj.root]);
+                    console.log(`[DevWatch:SnapshotManager] Opened VS Code: ${proj.root}`);
+                    launched += runnableServices.length;
+                    editors++;
+                    for (const svc of runnableServices)
+                        if (svc.port && svc.port >= 1024) this._openBrowserTab(svc.port);
+                    continue; // fully handled — skip fallback below
+                } catch (e) {
+                    console.warn('[DevWatch:SnapshotManager] VS Code launch failed:', e.message);
+                    // fall through to system-terminal fallback
                 }
             }
 
-            // ── Fallback: open editor directly + spawn system terminals ─────
+            // ── Fallback: open non-VS Code editors + system terminals ───────
             for (const ed of (proj.editors ?? [])) {
+                if (ed.app === 'code' || ed.app === 'codium') continue; // already attempted above
                 this._launchEditor(ed, proj.root);
                 editors++;
             }
@@ -384,6 +391,7 @@ export class SnapshotManager {
         ]) {
             try {
                 const launcher = new Gio.SubprocessLauncher({ flags: Gio.SubprocessFlags.NONE });
+                launcher.set_environ(GLib.get_environ());
                 launcher.set_cwd(cwd);
                 launcher.spawnv(argv);
                 console.log(`[DevWatch:SnapshotManager] Launched service: ${svc.cmdline} (${cwd})`);
@@ -404,6 +412,7 @@ export class SnapshotManager {
     _launchEditor(ed, projectRoot) {
         try {
             const launcher = new Gio.SubprocessLauncher({ flags: Gio.SubprocessFlags.NONE });
+            launcher.set_environ(GLib.get_environ());
             launcher.spawnv([ed.exec, projectRoot]);
             console.log(`[DevWatch:SnapshotManager] Opened editor: ${ed.exec} ${projectRoot}`);
         } catch (e) {
@@ -412,18 +421,39 @@ export class SnapshotManager {
     }
 
     /**
-     * Write a temporary VS Code workspace file that launches each service as a
-     * task running inside VS Code's integrated terminal (runOn: "folderOpen").
+     * Write DevWatch service commands into the project's own .vscode/tasks.json
+     * so VS Code runs them in its integrated terminal on folder open.
      *
-     * The file is stored in ~/.local/share/devwatch/workspaces/ so that VS Code
-     * remembers workspace-trust across reboots (unlike /tmp which is cleared).
+     * Writing to the project folder (not to ~/.local/share/devwatch/) means
+     * VS Code uses the same folder-level trust that was already granted when
+     * the developer first opened the project — no extra trust dialog.
      *
-     * @param {{ root: string, name: string }} proj
+     * Existing user-defined tasks are preserved; only tasks whose label starts
+     * with "DevWatch[" are replaced.
+     *
+     * @param {{ root: string }} proj
      * @param {Array<{ cmdline: string, cwd: string }>} services
-     * @returns {string|null}  Absolute path to the workspace file, or null on failure.
      */
-    _writeVscodeWorkspace(proj, services) {
-        const tasks = services.map((svc, i) => ({
+    _writeVscodeTasks(proj, services) {
+        const vscodeDir = GLib.build_filenamev([proj.root, '.vscode']);
+        try {
+            Gio.File.new_for_path(vscodeDir).make_directory_with_parents(null);
+        } catch (_) { /* already exists */ }
+
+        const tasksPath = GLib.build_filenamev([vscodeDir, 'tasks.json']);
+
+        // Read existing tasks.json to merge with (preserves user-defined tasks).
+        let existing = { version: '2.0.0', tasks: [] };
+        try {
+            const [, raw] = Gio.File.new_for_path(tasksPath).load_contents(null);
+            const parsed  = JSON.parse(new TextDecoder().decode(raw));
+            existing = parsed;
+            if (!Array.isArray(existing.tasks)) existing.tasks = [];
+            // Remove stale DevWatch entries so we don't accumulate duplicates.
+            existing.tasks = existing.tasks.filter(t => !String(t.label ?? '').startsWith('DevWatch['));
+        } catch (_) { /* fresh file — use defaults above */ }
+
+        const newTasks = services.map((svc, i) => ({
             label:      `DevWatch[${i}]: ${svc.cmdline.slice(0, 50)}`,
             type:       'shell',
             command:    svc.cmdline,
@@ -436,34 +466,17 @@ export class SnapshotManager {
             },
             problemMatcher: [],
         }));
-
-        const wsData = {
-            folders: [{ path: proj.root }],
-            tasks:   { version: '2.0.0', tasks },
-        };
-
-        const wsDir = GLib.build_filenamev([
-            GLib.get_home_dir(), '.local', 'share', 'devwatch', 'workspaces',
-        ]);
-        try {
-            Gio.File.new_for_path(wsDir).make_directory_with_parents(null);
-        } catch (_) { /* already exists */ }
-
-        const safeName = proj.name.replace(/[^a-zA-Z0-9_-]/g, '_');
-        const wsPath   = GLib.build_filenamev([wsDir, `${safeName}.code-workspace`]);
+        existing.tasks.push(...newTasks);
 
         try {
-            const file  = Gio.File.new_for_path(wsPath);
-            const bytes = new TextEncoder().encode(JSON.stringify(wsData, null, 2));
-            file.replace_contents(
-                bytes, null, false,
-                Gio.FileCreateFlags.REPLACE_DESTINATION, null
-            );
-            console.log(`[DevWatch:SnapshotManager] Wrote VS Code workspace: ${wsPath}`);
-            return wsPath;
+            const file    = Gio.File.new_for_path(tasksPath);
+            const ostream = file.replace(null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null);
+            const bytes   = new TextEncoder().encode(JSON.stringify(existing, null, 2));
+            ostream.write_bytes(new GLib.Bytes(bytes), null);
+            ostream.close(null);
+            console.log(`[DevWatch:SnapshotManager] Wrote VS Code tasks: ${tasksPath}`);
         } catch (e) {
-            console.warn('[DevWatch:SnapshotManager] _writeVscodeWorkspace failed:', e.message);
-            return null;
+            console.warn('[DevWatch:SnapshotManager] _writeVscodeTasks failed:', e.message);
         }
     }
 
@@ -477,6 +490,7 @@ export class SnapshotManager {
         GLib.timeout_add(GLib.PRIORITY_DEFAULT, 2500, () => {
             try {
                 const launcher = new Gio.SubprocessLauncher({ flags: Gio.SubprocessFlags.NONE });
+                launcher.set_environ(GLib.get_environ());
                 launcher.spawnv(['xdg-open', `http://localhost:${port}`]);
                 console.log(`[DevWatch:SnapshotManager] Opened browser tab: http://localhost:${port}`);
             } catch (e) {
@@ -501,6 +515,7 @@ export class SnapshotManager {
         ]) {
             try {
                 const launcher = new Gio.SubprocessLauncher({ flags: Gio.SubprocessFlags.NONE });
+                launcher.set_environ(GLib.get_environ());
                 launcher.spawnv(argv);
                 console.log(`[DevWatch:SnapshotManager] Opened terminal: ${title}`);
                 return;
