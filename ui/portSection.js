@@ -89,7 +89,7 @@ function _buildRow(record, onKill) {
         style_class: record.isDevPort ? 'dw-port-dot dw-port-dot-active' : 'dw-port-dot dw-port-dot-dim',
     }));
     const projectLabel = record.projectRoot
-        ? _truncate(GLib.path_get_basename(record.projectRoot), 22)
+        ? _truncate(GLib.path_get_basename(record.projectRoot), 37)
         : (record.processName ? _toServiceLabel(record.processName) : `Port ${record.port}`);
     line1.add_child(new St.Label({
         text: projectLabel,
