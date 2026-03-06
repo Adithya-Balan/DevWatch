@@ -304,22 +304,19 @@ export class SnapshotManager {
             }
 
             // ── Prefer VS Code integrated terminal ─────────────────────────
-            // Only use VS Code if the project was actually using it at snapshot
-            // time (editors[]) OR the project already has a .vscode/ directory
-            // (reliable indicator the developer works in VS Code for this repo).
-            // This prevents opening VS Code for Vim / PyCharm / no-editor projects
-            // merely because `code` happens to be installed on the machine.
-            const wasVscodeEditor = (proj.editors ?? []).some(
-                e => e.app === 'code' || e.app === 'codium'
-            );
-            const projectHasVscode = Gio.File.new_for_path(
-                GLib.build_filenamev([proj.root, '.vscode'])
+            // Detection strategy:
+            //  • VS Code processes are never attributed to a project by processTracker
+            //    (their CWD is the home dir or install dir, not the project root),
+            //    so checking proj.editors for VS Code always yields nothing.
+            //  • Instead: if VS Code is installed (in $PATH) AND the project has no
+            //    competing IDE marker (.idea/ → JetBrains), treat it as a VS Code
+            //    project.  This is the right default for Ubuntu dev machines.
+            const hasJetbrainsDir = Gio.File.new_for_path(
+                GLib.build_filenamev([proj.root, '.idea'])
             ).query_exists(null);
 
-            // Resolve the executable at restore time — the snapshot path may be
-            // stale after a VS Code upgrade.  Always prefer PATH; only fall back
-            // to the absolute path recorded in the snapshot if PATH lookup fails.
-            const vscodeExec = (wasVscodeEditor || projectHasVscode)
+            // Resolve VS Code executable at restore time so we survive upgrades.
+            const vscodeExec = !hasJetbrainsDir
                 ? (GLib.find_program_in_path('code') ??
                    GLib.find_program_in_path('code-oss') ??
                    GLib.find_program_in_path('codium') ??
@@ -333,7 +330,10 @@ export class SnapshotManager {
                 try {
                     const launcher = new Gio.SubprocessLauncher({ flags: Gio.SubprocessFlags.NONE });
                     launcher.set_environ(GLib.get_environ()); // required: passes WAYLAND_DISPLAY / DISPLAY
-                    launcher.spawnv([vscodeExec, proj.root]);
+                    // --new-window forces VS Code to open a fresh window even if it
+                    // already has this folder open.  This guarantees the folderOpen
+                    // event fires so runOn:"folderOpen" tasks actually run.
+                    launcher.spawnv([vscodeExec, '--new-window', proj.root]);
                     console.log(`[DevWatch:SnapshotManager] Opened VS Code: ${proj.root}`);
                     launched += runnableServices.length;
                     editors++;
@@ -451,6 +451,7 @@ export class SnapshotManager {
             Gio.File.new_for_path(vscodeDir).make_directory_with_parents(null);
         } catch (_) { /* already exists */ }
 
+        // ── tasks.json ────────────────────────────────────────────────────
         const tasksPath = GLib.build_filenamev([vscodeDir, 'tasks.json']);
 
         // Read existing tasks.json to merge with (preserves user-defined tasks).
@@ -482,15 +483,41 @@ export class SnapshotManager {
         try {
             const file  = Gio.File.new_for_path(tasksPath);
             const bytes = new TextEncoder().encode(JSON.stringify(existing, null, 2));
-            // replace_contents() is atomic (write-then-rename) and always writes
-            // all bytes — safer than managing a raw output stream.
             file.replace_contents(
                 bytes, null, false,
                 Gio.FileCreateFlags.REPLACE_DESTINATION, null
             );
             console.log(`[DevWatch:SnapshotManager] Wrote VS Code tasks: ${tasksPath}`);
         } catch (e) {
-            console.warn('[DevWatch:SnapshotManager] _writeVscodeTasks failed:', e.message);
+            console.warn('[DevWatch:SnapshotManager] _writeVscodeTasks (tasks.json) failed:', e.message);
+        }
+
+        // ── settings.json — enable automatic task execution ───────────────────
+        // VS Code gates runOn:"folderOpen" tasks behind task.allowAutomaticTasks.
+        // Its default value is "prompt", which shows a dismissible notification
+        // bar that the user may never see.  Writing "on" to the workspace-level
+        // settings.json enables auto-run for this workspace without requiring
+        // any manual user interaction.  Other settings are preserved.
+        const settingsPath = GLib.build_filenamev([vscodeDir, 'settings.json']);
+        let settings = {};
+        try {
+            const [, raw] = Gio.File.new_for_path(settingsPath).load_contents(null);
+            settings = JSON.parse(new TextDecoder().decode(raw));
+            if (typeof settings !== 'object' || Array.isArray(settings)) settings = {};
+        } catch (_) { /* fresh file */ }
+
+        settings['task.allowAutomaticTasks'] = 'on';
+
+        try {
+            const file  = Gio.File.new_for_path(settingsPath);
+            const bytes = new TextEncoder().encode(JSON.stringify(settings, null, 2));
+            file.replace_contents(
+                bytes, null, false,
+                Gio.FileCreateFlags.REPLACE_DESTINATION, null
+            );
+            console.log(`[DevWatch:SnapshotManager] Wrote VS Code settings: ${settingsPath}`);
+        } catch (e) {
+            console.warn('[DevWatch:SnapshotManager] _writeVscodeTasks (settings.json) failed:', e.message);
         }
     }
 
