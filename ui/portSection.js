@@ -128,6 +128,7 @@ function _buildRow(record, onKill) {
 
     item.add_child(outer);
     item.label.hide();
+    item.add_style_class_name('dw-port-row');
     return item;
 }
 
