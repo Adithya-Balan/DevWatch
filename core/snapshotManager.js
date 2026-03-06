@@ -326,7 +326,7 @@ export class SnapshotManager {
 
             if (vscodeExec) {
                 if (runnableServices.length > 0)
-                    this._writeVscodeTasks(proj, runnableServices);
+                    this._writeVscodeTasks(proj, runnableServices, vscodeExec);
                 try {
                     const launcher = new Gio.SubprocessLauncher({ flags: Gio.SubprocessFlags.NONE });
                     launcher.set_environ(GLib.get_environ()); // required: passes WAYLAND_DISPLAY / DISPLAY
@@ -435,17 +435,16 @@ export class SnapshotManager {
      * Write DevWatch service commands into the project's own .vscode/tasks.json
      * so VS Code runs them in its integrated terminal on folder open.
      *
-     * Writing to the project folder (not to ~/.local/share/devwatch/) means
-     * VS Code uses the same folder-level trust that was already granted when
-     * the developer first opened the project — no extra trust dialog.
-     *
-     * Existing user-defined tasks are preserved; only tasks whose label starts
-     * with "DevWatch[" are replaced.
+     * Also sets task.allowAutomaticTasks=on in the VS Code USER settings file
+     * (~/.config/Code/User/settings.json).  This is required because since
+     * VS Code 1.75 the setting is machine-scoped — writing it to the workspace
+     * .vscode/settings.json is silently ignored.
      *
      * @param {{ root: string }} proj
      * @param {Array<{ cmdline: string, cwd: string }>} services
+     * @param {string|null} vscodeExec  Resolved VS Code executable path.
      */
-    _writeVscodeTasks(proj, services) {
+    _writeVscodeTasks(proj, services, vscodeExec = null) {
         const vscodeDir = GLib.build_filenamev([proj.root, '.vscode']);
         try {
             Gio.File.new_for_path(vscodeDir).make_directory_with_parents(null);
@@ -454,16 +453,14 @@ export class SnapshotManager {
         // ── tasks.json ────────────────────────────────────────────────────
         const tasksPath = GLib.build_filenamev([vscodeDir, 'tasks.json']);
 
-        // Read existing tasks.json to merge with (preserves user-defined tasks).
         let existing = { version: '2.0.0', tasks: [] };
         try {
             const [, raw] = Gio.File.new_for_path(tasksPath).load_contents(null);
             const parsed  = JSON.parse(new TextDecoder().decode(raw));
             existing = parsed;
             if (!Array.isArray(existing.tasks)) existing.tasks = [];
-            // Remove stale DevWatch entries so we don't accumulate duplicates.
             existing.tasks = existing.tasks.filter(t => !String(t.label ?? '').startsWith('DevWatch['));
-        } catch (_) { /* fresh file — use defaults above */ }
+        } catch (_) { /* fresh file */ }
 
         const newTasks = services.map((svc, i) => ({
             label:      `DevWatch[${i}]: ${svc.cmdline.slice(0, 50)}`,
@@ -483,41 +480,49 @@ export class SnapshotManager {
         try {
             const file  = Gio.File.new_for_path(tasksPath);
             const bytes = new TextEncoder().encode(JSON.stringify(existing, null, 2));
-            file.replace_contents(
-                bytes, null, false,
-                Gio.FileCreateFlags.REPLACE_DESTINATION, null
-            );
+            file.replace_contents(bytes, null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null);
             console.log(`[DevWatch:SnapshotManager] Wrote VS Code tasks: ${tasksPath}`);
         } catch (e) {
             console.warn('[DevWatch:SnapshotManager] _writeVscodeTasks (tasks.json) failed:', e.message);
         }
 
-        // ── settings.json — enable automatic task execution ───────────────────
-        // VS Code gates runOn:"folderOpen" tasks behind task.allowAutomaticTasks.
-        // Its default value is "prompt", which shows a dismissible notification
-        // bar that the user may never see.  Writing "on" to the workspace-level
-        // settings.json enables auto-run for this workspace without requiring
-        // any manual user interaction.  Other settings are preserved.
-        const settingsPath = GLib.build_filenamev([vscodeDir, 'settings.json']);
-        let settings = {};
-        try {
-            const [, raw] = Gio.File.new_for_path(settingsPath).load_contents(null);
-            settings = JSON.parse(new TextDecoder().decode(raw));
-            if (typeof settings !== 'object' || Array.isArray(settings)) settings = {};
-        } catch (_) { /* fresh file */ }
+        // ── User-level settings — task.allowAutomaticTasks=on ───────────────────
+        // Since VS Code 1.75 this is a machine-scoped setting.  Workspace-level
+        // (.vscode/settings.json) writes are ignored.  It must live in the user
+        // settings file.  Determine the config dir from the executable name.
+        const exec = vscodeExec ?? '';
+        const configDirName =
+            exec.includes('codium')  ? 'VSCodium' :
+            exec.includes('code-oss') ? 'Code - OSS' :
+            'Code';  // default: official VS Code
+        const userSettingsPath = GLib.build_filenamev([
+            GLib.get_home_dir(), '.config', configDirName, 'User', 'settings.json',
+        ]);
 
-        settings['task.allowAutomaticTasks'] = 'on';
-
+        let userSettings = {};
         try {
-            const file  = Gio.File.new_for_path(settingsPath);
-            const bytes = new TextEncoder().encode(JSON.stringify(settings, null, 2));
-            file.replace_contents(
-                bytes, null, false,
-                Gio.FileCreateFlags.REPLACE_DESTINATION, null
-            );
-            console.log(`[DevWatch:SnapshotManager] Wrote VS Code settings: ${settingsPath}`);
-        } catch (e) {
-            console.warn('[DevWatch:SnapshotManager] _writeVscodeTasks (settings.json) failed:', e.message);
+            const [, raw] = Gio.File.new_for_path(userSettingsPath).load_contents(null);
+            userSettings = JSON.parse(new TextDecoder().decode(raw));
+            if (typeof userSettings !== 'object' || Array.isArray(userSettings)) userSettings = {};
+        } catch (_) { /* file may not exist yet */ }
+
+        if (userSettings['task.allowAutomaticTasks'] !== 'on') {
+            userSettings['task.allowAutomaticTasks'] = 'on';
+            try {
+                // Ensure the User directory exists (first-run VS Code may not have it)
+                const userDir = GLib.build_filenamev([
+                    GLib.get_home_dir(), '.config', configDirName, 'User',
+                ]);
+                Gio.File.new_for_path(userDir).make_directory_with_parents(null);
+            } catch (_) { /* already exists */ }
+            try {
+                const file  = Gio.File.new_for_path(userSettingsPath);
+                const bytes = new TextEncoder().encode(JSON.stringify(userSettings, null, 2));
+                file.replace_contents(bytes, null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null);
+                console.log(`[DevWatch:SnapshotManager] Set task.allowAutomaticTasks=on in ${userSettingsPath}`);
+            } catch (e) {
+                console.warn('[DevWatch:SnapshotManager] _writeVscodeTasks (user settings) failed:', e.message);
+            }
         }
     }
 
