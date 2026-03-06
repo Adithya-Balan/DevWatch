@@ -38,6 +38,7 @@ import {
     parseProcStatusField,
     readProcStat,
     readProcCwd,
+    readProcExe,
 } from '../utils/procReader.js';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -238,6 +239,7 @@ export class ProcessTracker {
         const stime = statFields ? parseInt(statFields[14], 10) || 0 : 0;
 
         const cwd = readProcCwd(pid); // may be null for short-lived processes
+        const exe = readProcExe(pid); // resolved binary path (follows venv/nvm symlinks)
 
         return {
             pid,
@@ -245,6 +247,7 @@ export class ProcessTracker {
             ppid,
             cmdline,
             cwd:          cwd ?? '',
+            exe:          exe ?? null,
             state,
             memKb,
             cpuPercent:   0,           // filled in after delta calculation

@@ -637,6 +637,22 @@ export class SnapshotManager {
             for (const proc of (pd?.processes ?? [])) {
                 const argv = _normaliseArgv(proc.cmdline);
                 if (!argv) continue;
+                // ── Resolve bare interpreter to its actual binary path ──────
+                // When a developer runs `python3 manage.py runserver` inside a
+                // virtual environment, /proc/<pid>/cmdline records the bare
+                // argv[0] (`python3`) but /proc/<pid>/exe resolves to the full
+                // venv path (`/home/.../myvenv/bin/python3`).  We substitute
+                // the exe path so the saved command can be restored correctly
+                // without needing the venv to be pre-activated.
+                // The same logic handles nvm (node), pyenv (python), rbenv (ruby),
+                // and any other version-manager that shims via PATH.
+                if (proc.exe &&
+                    !argv[0].startsWith('/') &&           // bare name, not an absolute path
+                    proc.exe.startsWith('/') &&           // exe resolved successfully
+                    GLib.path_get_basename(proc.exe) !== proc.exe  // exe has a directory component
+                ) {
+                    argv[0] = proc.exe;
+                }
                 const key = argv.join('\0');
                 if (seenArgv.has(key)) continue;
                 seenArgv.add(key);
