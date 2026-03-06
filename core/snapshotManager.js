@@ -316,8 +316,10 @@ export class SnapshotManager {
             ).query_exists(null);
 
             // Resolve VS Code executable at restore time so we survive upgrades.
+            // Checked in priority order: stable → Insiders → OSS → VSCodium.
             const vscodeExec = !hasJetbrainsDir
                 ? (GLib.find_program_in_path('code') ??
+                   GLib.find_program_in_path('code-insiders') ??
                    GLib.find_program_in_path('code-oss') ??
                    GLib.find_program_in_path('codium') ??
                    (proj.editors ?? []).find(e => e.app === 'code' || e.app === 'codium')?.exec ??
@@ -397,6 +399,12 @@ export class SnapshotManager {
         for (const argv of [
             ['gnome-terminal', `--title=${title}`, `--working-directory=${cwd}`,
              '--', 'bash', '-c', shellCmd],
+            ['konsole', '--title', title, '--workdir', cwd,
+             '-e', 'bash', '-c', shellCmd],
+            ['xfce4-terminal', `--title=${title}`, `--working-directory=${cwd}`,
+             '-x', 'bash', '-c', shellCmd],
+            ['mate-terminal', `--title=${title}`, `--working-directory=${cwd}`,
+             '-x', 'bash', '-c', shellCmd],
             ['xterm', '-title', title, '-e',
              `bash -c "cd '${cwd.replace(/'/g, "'\\''")}' && ${shellCmd}"`],
         ]) {
@@ -491,10 +499,13 @@ export class SnapshotManager {
         // (.vscode/settings.json) writes are ignored.  It must live in the user
         // settings file.  Determine the config dir from the executable name.
         const exec = vscodeExec ?? '';
+        // Determine the user config directory name for this VS Code variant.
+        // Order matters: check longer/more-specific strings first.
         const configDirName =
-            exec.includes('codium')  ? 'VSCodium' :
-            exec.includes('code-oss') ? 'Code - OSS' :
-            'Code';  // default: official VS Code
+            exec.includes('codium')        ? 'VSCodium' :
+            exec.includes('code-oss')      ? 'Code - OSS' :
+            exec.includes('code-insiders') ? 'Code - Insiders' :
+            'Code';  // default: official VS Code (deb / snap)
         const userSettingsPath = GLib.build_filenamev([
             GLib.get_home_dir(), '.config', configDirName, 'User', 'settings.json',
         ]);
@@ -556,6 +567,9 @@ export class SnapshotManager {
         const title = branch ? `${name} (${branch})` : name;
         for (const argv of [
             ['gnome-terminal', `--title=${title}`, `--working-directory=${root}`],
+            ['konsole', '--title', title, '--workdir', root],
+            ['xfce4-terminal', `--title=${title}`, `--working-directory=${root}`],
+            ['mate-terminal', `--title=${title}`, `--working-directory=${root}`],
             ['xterm', '-title', title, '-e',
              `bash -c "cd '${root.replace(/'/g, "'\\''")}' && exec $SHELL"`],
         ]) {
@@ -680,16 +694,23 @@ export class SnapshotManager {
                 // and any other version-manager that shims via PATH.
                 if (proc.exe &&
                     !argv[0].startsWith('/') &&           // bare name, not an absolute path
+                    !argv[0].startsWith('.') &&           // not a relative script (./manage.py)
                     proc.exe.startsWith('/') &&           // exe resolved successfully
                     GLib.path_get_basename(proc.exe) !== proc.exe  // exe has a directory component
                 ) {
-                    argv[0] = proc.exe;
+                    // Only substitute when the exe basename is the same interpreter name
+                    // or a versioned variant of it (e.g. python3 → python3.13, node → node).
+                    // This avoids replacing script names with the interpreter path.
+                    const exeBase = GLib.path_get_basename(proc.exe);
+                    if (exeBase === argv[0] || exeBase.startsWith(argv[0])) {
+                        argv[0] = proc.exe;
+                    }
                 }
                 const key = argv.join('\0');
                 if (seenArgv.has(key)) continue;
                 seenArgv.add(key);
                 services.push({
-                    cmdline: argv.join(' '),
+                    cmdline: _argvToCmdline(argv),
                     argv,
                     cwd:  proc.cwd ?? root,
                     port: pidToPort.get(proc.pid) ?? null,
@@ -810,9 +831,10 @@ const EDITOR_MAP = new Map([
 function _isNonProjectRoot(root) {
     const p    = root.replace(/\/+$/, '');   // strip trailing slash
     const base = p.split('/').pop() ?? '';   // basename
+    const home = GLib.get_home_dir();
 
-    // Python virtual environments (venv / .venv / virtualenv)
-    if (/^\.?venv$/.test(base) || base === 'virtualenv') return true;
+    // Python virtual environments (venv / .venv / env / virtualenv and versioned variants)
+    if (/^\.?venv\d*$/.test(base) || base === 'virtualenv' || base === 'env') return true;
 
     // Node.js / Python package directories
     if (base === 'node_modules' || base === 'site-packages' || base === '__pycache__') return true;
@@ -823,6 +845,27 @@ function _isNonProjectRoot(root) {
     if (p.includes('/.vscode-server/'))      return true;
     if (/\/ms-python\.|\/ms-[a-z]/.test(p)) return true;  // ms-python.*, ms-toolsai.*, etc.
     if (/\/\.MS-Python/.test(p))             return true;
+
+    // Python version managers and conda environments
+    if (p.startsWith(`${home}/.pyenv/versions/`))   return true;
+    if (p.startsWith(`${home}/anaconda3/envs/`))     return true;
+    if (p.startsWith(`${home}/miniconda3/envs/`))    return true;
+    if (p.startsWith(`${home}/miniforge3/envs/`))    return true;
+    if (p.includes('/conda/envs/'))                  return true;
+
+    // Node version managers
+    if (p.startsWith(`${home}/.nvm/versions/`))       return true;
+    if (p.startsWith(`${home}/.fnm/node-versions/`))  return true;
+
+    // Ruby version managers
+    if (p.startsWith(`${home}/.rvm/gems/`))           return true;
+    if (p.startsWith(`${home}/.rbenv/versions/`))     return true;
+
+    // Language dependency/module caches — never a real workspace root
+    if (p.startsWith(`${home}/go/pkg/mod/`))          return true;
+    if (p.startsWith(`${home}/.cargo/registry/`))     return true;
+    if (p.startsWith(`${home}/.m2/repository/`))      return true;
+    if (p.startsWith(`${home}/.gradle/caches/`))      return true;
 
     return false;
 }
@@ -923,18 +966,45 @@ function _normaliseArgv(cmdline) {
 
     if (SYSTEM_BINS.has(bin)) return null;
     if (SHELL_BINS.has(bin) && argv.length === 1) return null;
-    // Shell launched with -c "..." or similar — keep it, it runs a real command
-    if (SHELL_BINS.has(bin) && argv.length > 1) return argv;
+    if (SHELL_BINS.has(bin)) {
+        // Filter VS Code integrated-terminal shell-integration wrapper scripts.
+        // VS Code injects --init-file pointing to shellIntegration-bash.sh (or
+        // equivalent) for every terminal panel it opens.  These bash/zsh processes
+        // must never be saved or restored as dev services.
+        if (argv.some(a => /shellIntegration-(?:bash|zsh|fish|pwsh)\.sh/.test(a))) return null;
+        // Shell launched with -c "..." or other args — keep it, it runs a real command
+        return argv;
+    }
 
-    // Filter VS Code / Electron internal worker sub-processes.
-    // These processes are spawned internally by the IDE (renderer, extensionHost,
-    // GPU, utility, watchman…) and must never be saved or restored as dev services.
-    // They are identified by the --type= flag that Electron attaches to all workers.
-    const VSCODE_BINS = new Set(['code', 'code-oss', 'codium', 'electron']);
-    if (VSCODE_BINS.has(bin) &&
+    // Filter ALL VS Code IDE binary processes.  The IDE is relaunched by the
+    // restore() path via vscodeExec; saving code/codium as a service would cause
+    // VS Code to re-launch itself as a task inside its own integrated terminal.
+    const VSCODE_IDE_BINS = new Set(['code', 'code-oss', 'codium', 'code-insiders']);
+    if (VSCODE_IDE_BINS.has(bin)) return null;
+
+    // Filter Electron internal worker sub-processes (renderer, extensionHost, GPU…).
+    // Legitimate developer Electron apps (e.g. `electron .`) do NOT carry --type=
+    // and are therefore preserved.
+    if (bin === 'electron' &&
         argv.some(a => /^--type=/.test(a) || a === '--ms-enable-electron-run-as-node')) {
         return null;
     }
 
     return argv;
+}
+
+/**
+ * Convert an argv array into a shell-safe command string.
+ * Arguments that contain whitespace or shell metacharacters are single-quoted
+ * so the resulting string is safe to pass as a VS Code task `command` or to
+ * embed in a bash -c invocation.
+ *
+ * @param {string[]} argv
+ * @returns {string}
+ */
+function _argvToCmdline(argv) {
+    return argv.map(arg => {
+        if (!/[\s'"\\$`!()|;&<>]/.test(arg)) return arg;
+        return "'" + arg.replace(/'/g, "'\\''" ) + "'";
+    }).join(' ');
 }
