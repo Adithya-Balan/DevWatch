@@ -117,6 +117,7 @@ function _buildProjectRow(project, pidToPort) {
     if (services.length === 0) {
         const empty = new PopupMenu.PopupMenuItem('  No visible services', { reactive: false });
         empty.label.style_class = 'dw-dim';
+        empty.add_style_class_name('dw-empty-services');
         sub.menu.addMenuItem(empty);
     }
 

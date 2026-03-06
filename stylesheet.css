@@ -48,6 +48,11 @@
     border-top: 1px solid rgba(255,255,255,0.06);
 }
 
+/* Extra bottom breathing room when the empty-state label sits above divider */
+.devwatch-menu .popup-sub-menu .dw-empty-services {
+    padding-bottom: 6px;
+}
+
 /* ── Panel bar ─────────────────────────────────────────────────────────────── */
 .devwatch-panel-box   { spacing: 4px; }
 .devwatch-panel-label { font-size: 12px; }
