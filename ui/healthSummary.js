@@ -55,7 +55,7 @@ export function buildHealthSummary(menu, projectMap, portResult, cleanupResult, 
     actionsRow.spacing = 8;
 
     const cleanBtn = new St.Button({
-        label: 'Clean Env',
+        label: 'Clean Environment',
         style_class: 'dw-summary-action-btn',
         reactive: true, can_focus: true, track_hover: true,
     });

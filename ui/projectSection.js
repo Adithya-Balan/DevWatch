@@ -79,7 +79,7 @@ function _buildProjectRow(project, pidToPort) {
 
     // ── Level 1 header (vertical: name on L1, stats on L2) ──────────────
     const header = new St.BoxLayout({ vertical: true, x_expand: true });
-    header.spacing = 2;
+    header.spacing = 4;
 
     // Line 1: ● Project Name
     const nameLine = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER });
@@ -120,7 +120,7 @@ function _buildProjectRow(project, pidToPort) {
     // ── Actions ────────────────────────────────────────────────────────────
     const actionsItem = new PopupMenu.PopupMenuItem('', { reactive: false });
     const actionsRow = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER})
-    actionsRow.spacing = 6;
+    actionsRow.spacing = 8;
 
     const stopBtn = new St.Button({
         label: '⏹  Stop Project',

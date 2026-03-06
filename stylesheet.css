@@ -1,10 +1,19 @@
 /* ═══════════════════════════════════════════════════════════════════════════
- * DevWatch — stylesheet.css   (v5 — GNOME HIG 8px spacing system)
+ * DevWatch — stylesheet.css   (v6 — remove grey card, hierarchy, rhythm)
  * ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── Panel menu width ──────────────────────────────────────────────────────── */
 .devwatch-menu {
     min-width: 420px;
+}
+
+/* Remove grey expansion card background — scoped to our menu only          */
+.devwatch-menu .popup-sub-menu {
+    background-color: transparent;
+    box-shadow: none;
+    margin: 0;
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 /* ── Panel bar ─────────────────────────────────────────────────────────────── */
@@ -75,8 +84,7 @@
     font-size: 12px;
     font-weight: 600;
     color: #cccccc;
-    letter-spacing: 0.5px;
-    padding-top: 4px;
+    padding-top: 8px;
     padding-bottom: 8px;
     x-expand: true;
     y-align: center;
@@ -86,8 +94,7 @@
     font-size: 12px;
     font-weight: 600;
     color: #f8e45c;
-    letter-spacing: 0.5px;
-    padding-top: 4px;
+    padding-top: 8px;
     padding-bottom: 8px;
     x-expand: true;
     y-align: center;
@@ -116,7 +123,7 @@
 /* ── Typography ────────────────────────────────────────────────────────────── */
 .dw-project-name {
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
     color: #eeeeee;
     x-expand: true;
     y-align: center;
@@ -140,15 +147,17 @@
 
 .dw-service-name {
     font-size: 12px;
-    color: #c8c8c8;
+    color: #cccccc;
     x-expand: true;
     y-align: center;
+    min-height: 28px;
 }
 .dw-service-port {
     font-size: 11px;
     color: #78aeed;
     y-align: center;
     padding-right: 4px;
+    min-height: 28px;
 }
 .dw-service-uptime {
     font-size: 10px;
@@ -175,7 +184,7 @@
 /* ── Port section ──────────────────────────────────────────────────────────── */
 .dw-port-project {
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
     color: #dddddd;
     y-align: center;
     min-height: 24px;
