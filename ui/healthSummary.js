@@ -42,7 +42,7 @@ export function buildHealthSummary(menu, projectMap, portResult, cleanupResult, 
         x_expand: true,
         y_align: Clutter.ActorAlign.CENTER,
     });
-    infoBox.spacing = 3;
+    infoBox.spacing = 0;
 
     infoBox.add_child(new St.Label({ text: 'DevWatch', style_class: 'dw-summary-title' }));
 
@@ -52,7 +52,7 @@ export function buildHealthSummary(menu, projectMap, portResult, cleanupResult, 
 
     // quick action buttons: [Clean Dev Environment]  [Stop All]
     const actionsRow = new St.BoxLayout({ x_expand: false });
-    actionsRow.spacing = 6;
+    actionsRow.spacing = 8;
 
     const cleanBtn = new St.Button({
         label: 'Clean Env',

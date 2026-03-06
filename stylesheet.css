@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
- * DevWatch — stylesheet.css   (v4 — contrast, spacing, hierarchy)
+ * DevWatch — stylesheet.css   (v5 — GNOME HIG 8px spacing system)
  * ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── Panel menu width ──────────────────────────────────────────────────────── */
@@ -18,18 +18,19 @@
 
 /* ── Health summary (top bar) ──────────────────────────────────────────────── */
 .dw-summary-box {
-    padding: 4px 2px 6px 2px;
+    padding: 8px 16px 8px 16px;
     spacing: 0;
 }
 .dw-summary-title {
-    font-size: 14px;
-    font-weight: bold;
+    font-size: 16px;
+    font-weight: 600;
     color: #ffffff;
-    padding-bottom: 3px;
+    margin-bottom: 8px;
 }
 .dw-summary-stats {
-    font-size: 11px;
-    color: #777777;
+    font-size: 12px;
+    color: #aaaaaa;
+    margin-bottom: 12px;
 }
 .dw-summary-alert {
     font-size: 11px;
@@ -39,9 +40,9 @@
 }
 .dw-refresh-btn {
     icon-size: 14px;
-    color: #555555;
-    padding: 2px 4px;
-    border-radius: 4px;
+    color: #666666;
+    padding: 4px 8px;
+    border-radius: 6px;
 }
 .dw-refresh-btn:hover {
     color: #cccccc;
@@ -50,12 +51,11 @@
 
 /* ── Summary quick-action buttons ─────────────────────────────────────────── */
 .dw-summary-action-btn {
-    font-size: 10px;
+    font-size: 11px;
     color: #78aeed;
-    padding: 2px 9px;
-    border-radius: 5px;
-    background-color: rgba(120,174,237,0.08);
-    margin-top: 3px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    background-color: rgba(120,174,237,0.10);
 }
 .dw-summary-action-btn:hover {
     color: #b0d0f7;
@@ -72,37 +72,41 @@
 
 /* ── Section headers ───────────────────────────────────────────────────────── */
 .dw-section-label {
-    font-size: 10px;
-    font-weight: bold;
-    color: #bbbbbb;
-    letter-spacing: 0.8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #cccccc;
+    letter-spacing: 0.5px;
+    padding-top: 4px;
+    padding-bottom: 8px;
     x-expand: true;
     y-align: center;
 }
 /* Alert section header — slightly warmer than normal section labels */
 .dw-alert-section-label {
-    font-size: 10px;
-    font-weight: bold;
+    font-size: 12px;
+    font-weight: 600;
     color: #f8e45c;
-    letter-spacing: 0.8px;
+    letter-spacing: 0.5px;
+    padding-top: 4px;
+    padding-bottom: 8px;
     x-expand: true;
     y-align: center;
 }
 .dw-section-action {
-    font-size: 10px;
+    font-size: 11px;
     color: #78aeed;
-    padding: 2px 8px;
-    border-radius: 5px;
+    padding: 4px 12px;
+    border-radius: 6px;
 }
 .dw-section-action:hover {
     color: #b0d0f7;
     background-color: rgba(120,174,237,0.14);
 }
 .dw-section-action-danger {
-    font-size: 10px;
+    font-size: 11px;
     color: #f8e45c;
-    padding: 2px 8px;
-    border-radius: 5px;
+    padding: 4px 12px;
+    border-radius: 6px;
 }
 .dw-section-action-danger:hover {
     color: #ed333b;
@@ -112,20 +116,22 @@
 /* ── Typography ────────────────────────────────────────────────────────────── */
 .dw-project-name {
     font-size: 13px;
-    font-weight: bold;
+    font-weight: 500;
     color: #eeeeee;
     x-expand: true;
     y-align: center;
+    min-height: 24px;
 }
 .dw-project-stats {
     font-size: 11px;
     color: #909090;
     y-align: center;
     padding-left: 14px;
+    padding-bottom: 4px;
 }
 .dw-project-dot {
     font-size: 10px;
-    padding-right: 4px;
+    padding-right: 8px;
     y-align: center;
 }
 .dw-project-dot-green  { color: #57e389; }
@@ -169,9 +175,10 @@
 /* ── Port section ──────────────────────────────────────────────────────────── */
 .dw-port-project {
     font-size: 13px;
-    font-weight: bold;
+    font-weight: 500;
     color: #dddddd;
     y-align: center;
+    min-height: 24px;
 }
 .dw-port-number {
     font-size: 13px;
@@ -186,7 +193,7 @@
     width: 52px;
     y-align: center;
 }
-.dw-port-dot        { font-size: 9px; y-align: center; padding-right: 3px; }
+.dw-port-dot        { font-size: 9px; y-align: center; padding-right: 8px; }
 .dw-port-dot-active { color: #57e389; }
 .dw-port-dot-dim    { color: #3a3a3a; }
 .dw-port-process {
@@ -208,8 +215,8 @@
     font-size: 11px;
     font-weight: bold;
     color: #ed333b;
-    padding: 2px 10px;
-    border-radius: 5px;
+    padding: 4px 12px;
+    border-radius: 6px;
     background-color: rgba(237,51,59,0.10);
 }
 .dw-btn-kill:hover {
@@ -219,8 +226,8 @@
 .dw-btn-stop {
     font-size: 11px;
     color: #888888;
-    padding: 2px 8px;
-    border-radius: 5px;
+    padding: 4px 12px;
+    border-radius: 6px;
 }
 .dw-btn-stop:hover {
     color: #ed333b;
@@ -229,8 +236,8 @@
 .dw-btn-load {
     font-size: 11px;
     color: #888888;
-    padding: 2px 8px;
-    border-radius: 5px;
+    padding: 4px 12px;
+    border-radius: 6px;
 }
 .dw-btn-load:hover {
     color: #78aeed;
@@ -239,8 +246,8 @@
 .dw-btn-delete {
     font-size: 11px;
     color: #484848;
-    padding: 2px 6px;
-    border-radius: 5px;
+    padding: 4px 10px;
+    border-radius: 6px;
 }
 .dw-btn-delete:hover {
     color: #ed333b;
@@ -291,7 +298,7 @@
 .dw-build-active-cpu  { font-size: 11px; color: #ff7800; font-weight: bold; width: 52px; y-align: center; }
 .dw-build-ok-icon     { color: #57e389; font-size: 12px; width: 20px; y-align: center; }
 .dw-build-fail-icon   { color: #555555; font-size: 12px; width: 20px; y-align: center; }
-.dw-build-hist-hdr    { font-size: 10px; color: #888888; font-weight: bold; padding-top: 4px; }
+.dw-build-hist-hdr    { font-size: 11px; color: #aaaaaa; font-weight: 600; padding-top: 8px; padding-bottom: 4px; }
 
 /* ── Process sub-rows ──────────────────────────────────────────────────────── */
 .dw-proc-name   { font-size: 11px; color: #b0b0b0; x-expand: true; y-align: center; }
