@@ -41,6 +41,13 @@
     min-height: 0;
 }
 
+/* Actions row: top margin provides separation without a hard divider line  */
+.devwatch-menu .popup-sub-menu .dw-project-actions {
+    padding-top: 6px;
+    margin-top: 2px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+}
+
 /* ── Panel bar ─────────────────────────────────────────────────────────────── */
 .devwatch-panel-box   { spacing: 4px; }
 .devwatch-panel-label { font-size: 12px; }

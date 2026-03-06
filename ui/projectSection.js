@@ -76,10 +76,11 @@ export function clearProjectSection(menu) {
 function _buildProjectRow(project, pidToPort) {
     const sub = new PopupMenu.PopupSubMenuMenuItem('', true);
     sub.label.text = '';
-    // Transparent bg + indent + subtle left rail to group service rows under this project
+    // Card-style container: soft background + left indent for the service list
     sub.menu.actor.set_style(
-        'background-color: transparent; border-radius: 0; padding-left: 14px;' +
-        'border-left: 2px solid rgba(255,255,255,0.08);'
+        'background-color: rgba(255,255,255,0.05); border-radius: 8px;' +
+        'padding: 4px 0 4px 14px; margin-top: 2px;' +
+        'border: 1px solid rgba(255,255,255,0.07);'
     );
 
     // ── Level 1 header (vertical: name on L1, stats on L2) ──────────────
@@ -119,11 +120,10 @@ function _buildProjectRow(project, pidToPort) {
         sub.menu.addMenuItem(empty);
     }
 
-    sub.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-
-    // ── Actions ────────────────────────────────────────────────────────────
+    // ── Actions: no divider — top padding in CSS provides separation ──────
     const actionsItem = new PopupMenu.PopupMenuItem('', { reactive: false });
-    const actionsRow = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER})
+    actionsItem.add_style_class_name('dw-project-actions');
+    const actionsRow = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER});
     actionsRow.spacing = 8;
 
     const stopBtn = new St.Button({
@@ -154,8 +154,10 @@ function _buildServiceRow(svc) {
     const row  = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER });
     row.spacing = 8;
 
-    // Only show state indicator for meaningful states; skip normal sleep/idle (S/I)
-    if (svc.state && svc.state !== 'S' && svc.state !== 'I') {
+    // Only show state dot for actively running or error states
+    // State strings from /proc may be multi-char (e.g. 'Ss', 'S+'), so use startsWith
+    const isNoisy = !svc.state || svc.state.startsWith('S') || svc.state.startsWith('I');
+    if (!isNoisy) {
         row.add_child(new St.Label({
             text: svc.stateSymbol,
             style_class: `dw-proc-state ${svc.stateClass}`,
