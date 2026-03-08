@@ -141,11 +141,11 @@ function _buildRow(snap, isLastWorkspace, onRestore, onDelete) {
     const textStack = new St.BoxLayout({ vertical: true, x_expand: true, y_align: Clutter.ActorAlign.CENTER });
     
     const titleBox = new St.BoxLayout({ y_align: Clutter.ActorAlign.CENTER });
-    titleBox.spacing = 6;
+    titleBox.spacing = 4;
     
     if (isLastWorkspace) {
         titleBox.add_child(new St.Icon({
-            icon_name: 'document-revert-symbolic',
+            icon_name: 'edit-undo-symbolic',
             icon_size: 14,
             style_class: 'dw-session-icon-primary'
         }));
@@ -169,8 +169,8 @@ function _buildRow(snap, isLastWorkspace, onRestore, onDelete) {
     const projCount = snap.projectCount ?? (snap.projects?.length || 0);
     const svcCount = snap.serviceCount ?? ((snap.projects || []).reduce((n, p) => n + (p.services?.length || 0), 0));
     
-    if (projCount) subtitleParts.push(`${projCount} proj`);
-    if (svcCount) subtitleParts.push(`${svcCount} svcs`);
+    if (projCount) subtitleParts.push(`${projCount} project${projCount !== 1 ? 's' : ''}`);
+    if (svcCount) subtitleParts.push(`${svcCount} service${svcCount !== 1 ? 's' : ''}`);
 
     textStack.add_child(new St.Label({
         text: subtitleParts.join('  ·  '),
