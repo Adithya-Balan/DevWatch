@@ -7,6 +7,11 @@
     min-width: 420px;
 }
 
+/* Enable scrolling for the main menu container */
+.devwatch-menu .popup-menu-content {
+    max-height: 80vh;
+}
+
 /* Remove grey expansion card background — scoped to our menu only          */
 .devwatch-menu .popup-sub-menu {
     background-color: transparent;
@@ -15,6 +20,7 @@
     padding-top: 0;
     padding-bottom: 4px;
     padding-left: 16px;
+    max-height: none; /* Allow submenus to expand fully within scrollable parent */
 }
 
 /* Visual margin between project blocks (collapsed and expanded)           */
