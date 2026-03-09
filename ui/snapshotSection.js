@@ -141,7 +141,7 @@ function _buildRow(snap, isLastWorkspace, onRestore, onDelete) {
     const textStack = new St.BoxLayout({ vertical: true, x_expand: true, y_align: Clutter.ActorAlign.CENTER });
     
     const titleBox = new St.BoxLayout({ y_align: Clutter.ActorAlign.CENTER });
-    titleBox.spacing = 4;
+    titleBox.spacing = 8;
     
     if (isLastWorkspace) {
         titleBox.add_child(new St.Icon({
@@ -173,11 +173,7 @@ function _buildRow(snap, isLastWorkspace, onRestore, onDelete) {
     if (svcCount) subtitleParts.push(`${svcCount} service${svcCount !== 1 ? 's' : ''}`);
 
     textStack.add_child(new St.Label({
-        text: subtitleParts.join('  ·  '),
-        style_class: 'dw-session-subtitle'
-    }));
-
-    outer.add_child(textStack);
+        text: subtitleParts.join(' • '),
 
     // Right container for Actions
     const actionBox = new St.BoxLayout({ y_align: Clutter.ActorAlign.CENTER });
@@ -205,6 +201,13 @@ function _buildRow(snap, isLastWorkspace, onRestore, onDelete) {
         });
         delBtn.connect('clicked', () => onDelete?.(snap.filename));
         actionBox.add_child(delBtn);
+    } else {
+        // Spacer for consistent alignment with normal cards having a trash button
+        const spacer = new St.Widget({
+            width: 30, // trash icon (14px) + padding (8x2px)
+            height: 1
+        });
+        actionBox.add_child(spacer);
     }
 
     outer.add_child(actionBox);

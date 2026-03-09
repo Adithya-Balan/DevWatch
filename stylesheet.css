@@ -138,13 +138,14 @@
 }
 .dw-section-action {
     font-size: 11px;
-    color: #78aeed;
+    font-weight: bold;
+    color: #ffffff;
+    background-color: rgba(255,255,255,0.1);
     padding: 4px 12px;
     border-radius: 6px;
 }
 .dw-section-action:hover {
-    color: #b0d0f7;
-    background-color: rgba(120,174,237,0.14);
+    background-color: rgba(255,255,255,0.2);
 }
 .dw-section-action-danger {
     font-size: 11px;
@@ -469,22 +470,23 @@
 /* Scoped padding overrides for the sub-menu */
 .devwatch-menu .popup-sub-menu .dw-session-card,
 .devwatch-menu .popup-sub-menu .dw-session-card-primary {
-    padding: 10px 14px;
-    margin-bottom: 6px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
     margin-right: 14px;
-    border-radius: 8px;
+    margin-left: 14px;
+    border-radius: 12px;
 }
 
 /* Normal session card */
 .devwatch-menu .popup-sub-menu .dw-session-card {
-    background-color: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.05);
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.02);
 }
 
 /* Last Workspace card (highlighted) */
 .devwatch-menu .popup-sub-menu .dw-session-card-primary {
-    background-color: rgba(120,174,237,0.06);
-    border: 1px solid rgba(120,174,237,0.15);
+    background-color: rgba(36, 114, 200, 0.1);
+    border: 1px solid rgba(53, 132, 228, 0.2);
 }
 
 /* Naming row spacing */
@@ -494,18 +496,18 @@
 
 /* Typography Strings */
 .dw-session-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: #eeeeee;
+    font-size: 14px;
+    font-weight: bold;
+    color: #ffffff;
 }
 .dw-session-title-primary {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: bold;
     color: #78aeed;
 }
 .dw-session-subtitle {
     font-size: 11px;
-    color: #888888;
+    color: rgba(255, 255, 255, 0.55);
     margin-top: 2px;
 }
 .dw-session-icon-primary {
