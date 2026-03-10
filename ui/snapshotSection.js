@@ -135,18 +135,18 @@ function _buildRow(snap, isLastWorkspace, onRestore, onDelete) {
     
     // Overall horizontal layout
     const outer = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER });
-    outer.spacing = 12;
+    outer.spacing = 8;
 
     // Left container for Title + Subtitle
     const textStack = new St.BoxLayout({ vertical: true, x_expand: true, y_align: Clutter.ActorAlign.CENTER });
     
     const titleBox = new St.BoxLayout({ y_align: Clutter.ActorAlign.CENTER });
-    titleBox.spacing = 8;
+    titleBox.spacing = 6;
     
     if (isLastWorkspace) {
         titleBox.add_child(new St.Icon({
-            icon_name: 'edit-undo-symbolic',
-            icon_size: 14,
+            icon_name: 'document-open-recent-symbolic',
+            icon_size: 13,
             style_class: 'dw-session-icon-primary'
         }));
         titleBox.add_child(new St.Label({
@@ -174,6 +174,10 @@ function _buildRow(snap, isLastWorkspace, onRestore, onDelete) {
 
     textStack.add_child(new St.Label({
         text: subtitleParts.join(' • '),
+        style_class: 'dw-session-subtitle'
+    }));
+
+    outer.add_child(textStack);
 
     // Right container for Actions
     const actionBox = new St.BoxLayout({ y_align: Clutter.ActorAlign.CENTER });
@@ -204,7 +208,7 @@ function _buildRow(snap, isLastWorkspace, onRestore, onDelete) {
     } else {
         // Spacer for consistent alignment with normal cards having a trash button
         const spacer = new St.Widget({
-            width: 30, // trash icon (14px) + padding (8x2px)
+            width: 27, // matches trash icon button width
             height: 1
         });
         actionBox.add_child(spacer);
