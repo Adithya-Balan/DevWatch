@@ -133,11 +133,37 @@ export default class DevWatchExtension extends Extension {
         // ── Dropdown skeleton ──────────────────────────────────────────
         this._buildMenuSkeleton();
 
-        // ── Refresh on menu open ───────────────────────────────────────
+        // ── Refresh on menu open + one-time scroll setup ───────────────
+        // We wire the scroll fix here (not in enable()) so the widget tree
+        // is guaranteed to be fully realized before we walk it.
+        this._scrollSetupDone = false;
         this._menuOpenSignalId = this._indicator.menu.connect(
             'open-state-changed',
             (_menu, open) => {
-                if (open) this._refresh().catch(e => this._logError(e));
+                if (open) {
+                    // Set up scrolling once: change the internal St.ScrollView
+                    // policy from NEVER (default) to AUTOMATIC so the menu
+                    // scrolls instead of shrinking when content exceeds the
+                    // monitor height. We walk up from menu.box because
+                    // menu.box.get_parent() can be a St.Bin wrapper in
+                    // GNOME Shell 49, not the ScrollView directly.
+                    if (!this._scrollSetupDone) {
+                        let sv = this._indicator.menu._scrollView ?? null;
+                        if (!sv) {
+                            let a = this._indicator.menu.box;
+                            for (let i = 0; i < 8 && a; i++) {
+                                a = a.get_parent();
+                                if (a instanceof St.ScrollView) { sv = a; break; }
+                            }
+                        }
+                        if (sv) {
+                            sv.vscrollbar_policy = St.PolicyType.AUTOMATIC;
+                            sv.overlay_scrollbars = true;
+                        }
+                        this._scrollSetupDone = true;
+                    }
+                    this._refresh().catch(e => this._logError(e));
+                }
             }
         );
 
@@ -157,29 +183,8 @@ export default class DevWatchExtension extends Extension {
         // ── Apply panel menu min-width ─────────────────────────────────
         this._indicator.menu.box.add_style_class_name('devwatch-menu');
 
-        // ── Enable scrolling once height exceeds screen ────────────────
-        // GNOME Shell initialises the menu's internal St.ScrollView with
-        // vscrollbar_policy = NEVER, causing layout to *shrink* all items
-        // instead of scrolling when content exceeds the monitor height.
-        // Switching to AUTOMATIC lets native scrolling kick in and leaves
-        // every section at its natural height regardless of total length.
-        // Get the St.ScrollView that wraps the menu content box.
-        // menu.box is the inner content BoxLayout; its parent is the ScrollView.
-        // We also try the known _scrollView property as a fallback.
-        const _menuSV = this._indicator.menu.box?.get_parent() ??
-                        this._indicator.menu._scrollView ?? null;
-        if (_menuSV) {
-            // Switch from NEVER to AUTOMATIC so the menu scrolls instead of
-            // shrinking/clipping items when content exceeds the monitor height.
-            _menuSV.vscrollbar_policy = St.PolicyType.AUTOMATIC;
-            _menuSV.overlay_scrollbars = true;
-            // Use pixel height (not vh units — GNOME Shell 49's CSS engine may
-            // not honour them on ScrollView actors) so the viewport is bounded
-            // and vscrollbar_policy=AUTOMATIC can actually activate scrolling.
-            const _monitor = Main.layoutManager.primaryMonitor;
-            const _maxH = _monitor ? Math.round(_monitor.height * 0.82) : 700;
-            _menuSV.set_style(`max-height: ${_maxH}px;`);
-        }
+        // (Scroll policy is set in open-state-changed above, once the
+        //  widget tree is fully realized.)
 
         // ── Keyboard shortcut (Super+D) ────────────────────────────────
         try {
