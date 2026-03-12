@@ -7,9 +7,12 @@
     min-width: 420px;
 }
 
-/* Enable scrolling for the main menu container */
+/* Enable scrolling for the main menu container.
+ * max-height caps the scroll viewport; the vscrollbar_policy = AUTOMATIC
+ * set in extension.js ensures the scrollbar activates instead of shrinking. */
 .devwatch-menu .popup-menu-content {
-    max-height: 80vh;
+    max-height: 85vh;
+    overflow-y: auto;
 }
 
 /* Remove grey expansion card background — scoped to our menu only          */
@@ -20,7 +23,10 @@
     padding-top: 0;
     padding-bottom: 4px;
     padding-left: 16px;
-    max-height: none; /* Allow submenus to expand fully within scrollable parent */
+    /* No max-height — sub-menus must expand to their full natural size;
+     * scrolling is handled by the parent St.ScrollView, not clamped here. */
+    max-height: none;
+    overflow: hidden;
 }
 
 /* Visual margin between project blocks (collapsed and expanded)           */
@@ -588,4 +594,17 @@
 .dw-session-btn-cancel:hover {
     background-color: rgba(255, 255, 255, 0.15);
     color: #eeeeee;
+}
+
+.dw-session-stats {
+    font-size: 11px;
+    font-weight: 600;
+    color: #cccccc;
+    margin-top: 3px;
+}
+.dw-session-date {
+    font-size: 9px;
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.25);
+    margin-top: 1px;
 }

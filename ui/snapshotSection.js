@@ -24,12 +24,13 @@ export function buildSnapshotSection(menu, snapshots, callbacks, lastWorkspace =
     sub._devwatchSection = SECTION_TAG;
 
     // ── Header row ────────────────────────────────────────────────────────
-    const headerRow = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER });
-    headerRow.set_style('margin-top: 6px; margin-bottom: 6px; margin-right: 4px;');
+    // x_align: Clutter.ActorAlign.FILL ensures the row stretches to the parent's full width.
+    const headerRow = new St.BoxLayout({ x_expand: true, x_align: Clutter.ActorAlign.FILL, y_align: Clutter.ActorAlign.CENTER });
+    headerRow.set_style('margin-top: 6px; margin-bottom: 6px; margin-right: 4px; ');
     
     headerRow.add_child(new St.Label({ text: _('Sessions'), style_class: 'dw-section-label' }));
 
-    const spacer = new St.Widget({ x_expand: true });
+    const spacer = new St.BoxLayout({ x_expand: true });
     headerRow.add_child(spacer);
 
     const saveBtn = new St.Button({
@@ -70,6 +71,7 @@ export function buildSnapshotSection(menu, snapshots, callbacks, lastWorkspace =
         reactive: true, can_focus: true, track_hover: true,
         y_align: Clutter.ActorAlign.CENTER,
     });
+    cancelBtn.set_style('margin-left: 6px;');
 
     namingBox.add_child(entry);
     namingBox.add_child(confirmBtn);
@@ -173,20 +175,31 @@ function _buildRow(snap, isLastWorkspace, onRestore, onDelete) {
     }
     textStack.add_child(titleBox);
 
-    // Subtitle line (Date · 3 projects · 7 services)
-    const subtitleParts = [];
-    if (snap.savedAt) subtitleParts.push(_formatDate(snap.savedAt));
-    
+    // Stats line (Projects · Services)
     const projCount = snap.projectCount ?? (snap.projects?.length || 0);
     const svcCount = snap.serviceCount ?? ((snap.projects || []).reduce((n, p) => n + (p.services?.length || 0), 0));
     
-    if (projCount) subtitleParts.push(`${projCount} project${projCount !== 1 ? 's' : ''}`);
-    if (svcCount) subtitleParts.push(`${svcCount} service${svcCount !== 1 ? 's' : ''}`);
+    const statsParts = [];
+    if (projCount) statsParts.push(`${projCount} project${projCount !== 1 ? 's' : ''}`);
+    if (svcCount) statsParts.push(`${svcCount} service${svcCount !== 1 ? 's' : ''}`);
 
-    textStack.add_child(new St.Label({
-        text: subtitleParts.join(' • '),
-        style_class: 'dw-session-subtitle'
-    }));
+    if (statsParts.length > 0) {
+        textStack.add_child(new St.Label({
+            text: statsParts.join(' • '),
+            style_class: 'dw-session-stats'
+        }));
+    }
+
+    // Date line (Less prominent, below stats)
+    if (snap.savedAt) {
+        const dateText = _formatDate(snap.savedAt);
+        if (dateText) {
+            textStack.add_child(new St.Label({
+                text: dateText,
+                style_class: 'dw-session-date'
+            }));
+        }
+    }
 
     outer.add_child(textStack);
 
@@ -214,12 +227,13 @@ function _buildRow(snap, isLastWorkspace, onRestore, onDelete) {
             reactive: true, can_focus: true, track_hover: true,
             y_align: Clutter.ActorAlign.CENTER,
         });
+        delBtn.set_style('margin-left: 8px;');
         delBtn.connect('clicked', () => onDelete?.(snap.filename));
         actionBox.add_child(delBtn);
     } else {
         // Spacer for consistent alignment with normal cards having a trash button
         const spacer = new St.Widget({
-            width: 34, // matches trash icon button width
+            width: 34 + 8, // matches trash icon button width + margin
             height: 1
         });
         actionBox.add_child(spacer);

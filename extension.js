@@ -157,6 +157,18 @@ export default class DevWatchExtension extends Extension {
         // ── Apply panel menu min-width ─────────────────────────────────
         this._indicator.menu.box.add_style_class_name('devwatch-menu');
 
+        // ── Enable scrolling once height exceeds screen ────────────────
+        // GNOME Shell initialises the menu's internal St.ScrollView with
+        // vscrollbar_policy = NEVER, causing layout to *shrink* all items
+        // instead of scrolling when content exceeds the monitor height.
+        // Switching to AUTOMATIC lets native scrolling kick in and leaves
+        // every section at its natural height regardless of total length.
+        const _menuSV = this._indicator.menu._scrollView;
+        if (_menuSV) {
+            _menuSV.vscrollbar_policy = St.PolicyType.AUTOMATIC;
+            _menuSV.overlay_scrollbars = true;
+        }
+
         // ── Keyboard shortcut (Super+D) ────────────────────────────────
         try {
             Main.wm.addKeybinding(
