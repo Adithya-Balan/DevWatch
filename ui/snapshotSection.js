@@ -25,11 +25,16 @@ export function buildSnapshotSection(menu, snapshots, callbacks, lastWorkspace =
 
     // ── Header row ────────────────────────────────────────────────────────
     const headerRow = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER });
-    headerRow.add_child(new St.Label({ text: _('Sessions'), style_class: 'dw-section-label', x_expand: true }));
+    headerRow.set_style('margin-top: 6px; margin-bottom: 6px; margin-right: 4px;');
+    
+    headerRow.add_child(new St.Label({ text: _('Sessions'), style_class: 'dw-section-label' }));
+
+    const spacer = new St.Widget({ x_expand: true });
+    headerRow.add_child(spacer);
 
     const saveBtn = new St.Button({
         label: _('Save'),
-        style_class: 'dw-section-action',
+        style_class: 'dw-session-btn-save',
         reactive: true, can_focus: true, track_hover: true,
         y_align: Clutter.ActorAlign.CENTER,
     });
@@ -42,7 +47,8 @@ export function buildSnapshotSection(menu, snapshots, callbacks, lastWorkspace =
     const namingItem = new PopupMenu.PopupMenuItem('', { reactive: false });
     namingItem.add_style_class_name('dw-session-naming-row');
     const namingBox = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER });
-    namingBox.spacing = 6;
+    namingBox.set_style('margin-top: 4px; margin-bottom: 8px; margin-right: 6px; margin-left: 6px;');
+    namingBox.spacing = 8;
 
     const entry = new St.Entry({
         hint_text: _('Session name…'),
@@ -53,14 +59,16 @@ export function buildSnapshotSection(menu, snapshots, callbacks, lastWorkspace =
     entry.clutter_text.set_max_length(40);
 
     const confirmBtn = new St.Button({
-        label: '✓',
-        style_class: 'dw-section-action',
+        label: _('Confirm'),
+        style_class: 'dw-session-btn-resume',
         reactive: true, can_focus: true, track_hover: true,
+        y_align: Clutter.ActorAlign.CENTER,
     });
     const cancelBtn = new St.Button({
-        label: '✕',
-        style_class: 'dw-btn-delete',
+        label: _('Close'),
+        style_class: 'dw-session-btn-cancel',
         reactive: true, can_focus: true, track_hover: true,
+        y_align: Clutter.ActorAlign.CENTER,
     });
 
     namingBox.add_child(entry);
@@ -211,7 +219,7 @@ function _buildRow(snap, isLastWorkspace, onRestore, onDelete) {
     } else {
         // Spacer for consistent alignment with normal cards having a trash button
         const spacer = new St.Widget({
-            width: 27, // matches trash icon button width
+            width: 34, // matches trash icon button width
             height: 1
         });
         actionBox.add_child(spacer);

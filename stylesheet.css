@@ -513,8 +513,8 @@
     color: #e8a040;
 }
 .dw-session-subtitle {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.5);
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.35);
     margin-top: 3px;
 }
 .dw-session-icon-primary {
@@ -552,13 +552,40 @@
     background-color: rgba(165, 90, 10, 1.0);
 }
 
-/* Delete icon — quiet until hovered */
+/* Delete icon — clearly visible but secondary */
 .dw-session-btn-icon-danger {
-    color: rgba(255,255,255,0.28);
-    padding: 4px 7px;
+    color: rgba(255,255,255,0.6);
+    background-color: rgba(255,255,255,0.06);
+    padding: 4px 10px;
     border-radius: 6px;
 }
 .dw-session-btn-icon-danger:hover {
     color: #ed333b;
     background-color: rgba(237,51,59,0.12);
+}
+
+/* Specific Session Actions */
+.dw-session-btn-save {
+    font-size: 11px;
+    font-weight: 600;
+    color: #e8a040;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background-color: rgba(232, 160, 64, 0.1);
+}
+.dw-session-btn-save:hover {
+    background-color: rgba(232, 160, 64, 0.2);
+    color: #f7b455;
+}
+.dw-session-btn-cancel {
+    font-size: 11px;
+    font-weight: 600;
+    color: #aaaaaa;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background-color: rgba(255, 255, 255, 0.08);
+}
+.dw-session-btn-cancel:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: #eeeeee;
 }
