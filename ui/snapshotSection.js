@@ -97,6 +97,9 @@ export function buildSnapshotSection(menu, snapshots, callbacks, lastWorkspace =
     });
 
     menu.addMenuItem(sub);
+    // Give the session sub-menu a consistent top gap so the first card is
+    // flush with subsequent ones (sub-menu CSS has padding-top: 0 by default).
+    sub.menu.actor.set_style('padding-top: 5px;');
     sub.menu.addMenuItem(namingItem, 0);
     namingItem.visible = false;
 

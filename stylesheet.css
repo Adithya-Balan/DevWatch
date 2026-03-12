@@ -142,16 +142,17 @@
     x-expand: true;
     y-align: center;
 }
+/* Right-anchored secondary action — sits between section title and ▼ arrow */
 .dw-section-action {
     font-size: 11px;
-    font-weight: bold;
-    color: #e8a040;
-    padding: 4px 12px;
-    border-radius: 6px;
+    font-weight: normal;
+    color: rgba(232, 160, 64, 0.65);
+    padding: 2px 8px;
+    border-radius: 5px;
 }
 .dw-section-action:hover {
-    color: #f0b85a;
-    background-color: rgba(232,160,64,0.14);
+    color: #e8a040;
+    background-color: rgba(232, 160, 64, 0.1);
 }
 .dw-section-action-danger {
     font-size: 11px;
@@ -513,8 +514,8 @@
 }
 .dw-session-subtitle {
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.45);
-    margin-top: 2px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 3px;
 }
 .dw-session-icon-primary {
     color: #e8a040;
