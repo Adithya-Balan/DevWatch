@@ -24,14 +24,21 @@ export function buildSnapshotSection(menu, snapshots, callbacks, lastWorkspace =
     sub._devwatchSection = SECTION_TAG;
 
     // ── Header row ────────────────────────────────────────────────────────
-    // x_align: Clutter.ActorAlign.FILL ensures the row stretches to the parent's full width.
-    const headerRow = new St.BoxLayout({ x_expand: true, x_align: Clutter.ActorAlign.FILL, y_align: Clutter.ActorAlign.CENTER });
-    headerRow.set_style('margin-top: 6px; margin-bottom: 6px; margin-right: 4px; ');
-    
-    headerRow.add_child(new St.Label({ text: _('Sessions'), style_class: 'dw-section-label' }));
+    const headerRow = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER });
+    headerRow.set_style('margin-top: 6px; margin-bottom: 6px; margin-right: 4px;');
 
-    const spacer = new St.BoxLayout({ x_expand: true });
-    headerRow.add_child(spacer);
+    // Give x_expand directly to the label as a GObject property (not CSS).
+    // This tells the parent BoxLayout's layout engine to allocate all extra
+    // horizontal space to this child, pushing the Save button to the right edge.
+    // Using a separate spacer widget does NOT work reliably inside the
+    // PopupSubMenuMenuItem actor structure in GNOME Shell 49.
+    const sectionLabel = new St.Label({
+        text: _('Sessions'),
+        style_class: 'dw-section-label',
+        x_expand: true,
+        x_align: Clutter.ActorAlign.START,
+    });
+    headerRow.add_child(sectionLabel);
 
     const saveBtn = new St.Button({
         label: _('Save'),

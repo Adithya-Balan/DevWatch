@@ -7,12 +7,19 @@
     min-width: 420px;
 }
 
-/* Enable scrolling for the main menu container.
- * max-height caps the scroll viewport; the vscrollbar_policy = AUTOMATIC
- * set in extension.js ensures the scrollbar activates instead of shrinking. */
+/* Enable scrolling: max-height goes on the scroll VIEW (popup-menu-scroll-view),
+ * NOT on the inner content box (popup-menu-content). The scroll view is the
+ * bounded viewport; the content box must be free to grow beyond it so that
+ * vscrollbar_policy=AUTOMATIC (set in extension.js) can activate scrolling.
+ * The inline set_style() in extension.js is the primary constraint; this CSS
+ * rule is a failsafe for any code path that bypasses the JS setup. */
+.devwatch-menu .popup-menu-scroll-view {
+    max-height: 82vh;
+}
+
+/* Let the content box grow freely — height is constrained by the scroll view */
 .devwatch-menu .popup-menu-content {
-    max-height: 85vh;
-    overflow-y: auto;
+    max-height: none;
 }
 
 /* Remove grey expansion card background — scoped to our menu only          */
@@ -135,7 +142,9 @@
     color: #cccccc;
     padding-top: 8px;
     padding-bottom: 8px;
-    x-expand: true;
+    /* x-expand is intentionally NOT set here — the expanding spacer in the
+     * headerRow JS layout is responsible for pushing the Save button right.
+     * Setting x-expand on the label steals all space from the spacer. */
     y-align: center;
 }
 /* Alert section header — slightly warmer than normal section labels */

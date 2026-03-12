@@ -163,10 +163,22 @@ export default class DevWatchExtension extends Extension {
         // instead of scrolling when content exceeds the monitor height.
         // Switching to AUTOMATIC lets native scrolling kick in and leaves
         // every section at its natural height regardless of total length.
-        const _menuSV = this._indicator.menu._scrollView;
+        // Get the St.ScrollView that wraps the menu content box.
+        // menu.box is the inner content BoxLayout; its parent is the ScrollView.
+        // We also try the known _scrollView property as a fallback.
+        const _menuSV = this._indicator.menu.box?.get_parent() ??
+                        this._indicator.menu._scrollView ?? null;
         if (_menuSV) {
+            // Switch from NEVER to AUTOMATIC so the menu scrolls instead of
+            // shrinking/clipping items when content exceeds the monitor height.
             _menuSV.vscrollbar_policy = St.PolicyType.AUTOMATIC;
             _menuSV.overlay_scrollbars = true;
+            // Use pixel height (not vh units — GNOME Shell 49's CSS engine may
+            // not honour them on ScrollView actors) so the viewport is bounded
+            // and vscrollbar_policy=AUTOMATIC can actually activate scrolling.
+            const _monitor = Main.layoutManager.primaryMonitor;
+            const _maxH = _monitor ? Math.round(_monitor.height * 0.82) : 700;
+            _menuSV.set_style(`max-height: ${_maxH}px;`);
         }
 
         // ── Keyboard shortcut (Super+D) ────────────────────────────────
