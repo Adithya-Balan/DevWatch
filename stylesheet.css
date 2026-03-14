@@ -446,13 +446,41 @@
 }
 
 /* ── Build section ─────────────────────────────────────────────────────────── */
-.dw-build-active-icon { color: #f8e45c; font-size: 14px; width: 20px; y-align: center; }
-.dw-build-status      { font-size: 13px; font-weight: bold; color: #f8e45c; y-align: center; }
-.dw-build-meta        { font-size: 10px; color: #aaaaaa; y-align: center; }
-.dw-build-active-cpu  { font-size: 11px; color: #ff7800; font-weight: bold; width: 52px; y-align: center; }
-.dw-build-ok-icon     { color: #57e389; font-size: 12px; width: 20px; y-align: center; }
-.dw-build-fail-icon   { color: #555555; font-size: 12px; width: 20px; y-align: center; }
-.dw-build-hist-hdr    { font-size: 11px; color: #aaaaaa; font-weight: 600; padding-top: 8px; padding-bottom: 4px; }
+.dw-build-active-card {
+    background-color: rgba(120, 174, 237, 0.08);
+    border: 1px solid rgba(120, 174, 237, 0.15);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    margin-left: 12px;
+    margin-right: 12px;
+}
+.dw-build-active-icon { color: #78aeed; font-size: 14px; y-align: center; }
+.dw-build-status      { font-size: 13px; font-weight: 600; color: #eeeeee; y-align: center; }
+.dw-build-meta        { font-size: 11px; color: #888888; y-align: center; padding-top: 2px; }
+
+/* History sub-menu item tweaks */
+.devwatch-menu .popup-sub-menu .dw-build-hist-row {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    margin-right: 12px;
+}
+.dw-build-ok-icon     { color: #57e389; font-size: 12px; width: 18px; y-align: center; }
+.dw-build-fail-icon   { color: #ed333b; font-size: 12px; width: 18px; y-align: center; }
+.dw-build-proj-name   { font-size: 12px; font-weight: 500; color: #cccccc; x-expand: true; y-align: center; }
+
+.dw-build-stat-pill {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 10px;
+    color: #aaaaaa;
+    y-align: center;
+    font-family: monospace;
+}
+
+.dw-build-hist-hdr    { font-size: 12px; color: #dddddd; font-weight: 600; padding-top: 8px; padding-bottom: 8px; }
 
 /* ── Process sub-rows ──────────────────────────────────────────────────────── */
 .dw-proc-name   { font-size: 11px; color: #b0b0b0; x-expand: true; y-align: center; }

@@ -26,6 +26,7 @@ export function buildPerfSection(menu, buildResult, maxRows = DEFAULT_MAX_HISTOR
     const titleItem = new PopupMenu.PopupMenuItem('', { reactive: false });
     titleItem._devwatchSection = SECTION_TAG;
     const titleRow = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER });
+    titleRow.set_style('margin-top: 6px; margin-bottom: 2px;');
     titleRow.add_child(new St.Label({ text: _('Build Activity'), style_class: 'dw-section-label' }));
     titleItem.add_child(titleRow);
     titleItem.label.hide();
@@ -80,15 +81,23 @@ export function clearPerfSection(menu) {
 
 function _buildActiveRow(run) {
     const item = new PopupMenu.PopupMenuItem('', { reactive: false });
-    const row  = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER});
-    row.spacing = 6;
+    item.add_style_class_name('dw-build-active-card');
 
-    row.add_child(new St.Label({ text: '⚙', style_class: 'dw-build-active-icon' }));
+    const row  = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER});
+    row.spacing = 10;
+
+    row.add_child(new St.Icon({
+        icon_name: 'system-run-symbolic',
+        style_class: 'dw-build-active-icon',
+        y_align: Clutter.ActorAlign.CENTER
+    }));
+    
+    const textStack = new St.BoxLayout({ vertical: true, x_expand: true, y_align: Clutter.ActorAlign.CENTER });
 
     // "Building tracktite" — project name is the primary label
     const proj = run.projectRoot ? GLib.path_get_basename(run.projectRoot) : run.tool;
-    row.add_child(new St.Label({
-        text: `Building ${_truncate(proj, 20)}`,
+    textStack.add_child(new St.Label({
+        text: `Building ${_truncate(proj, 24)}`,
         style_class: 'dw-build-status',
         x_expand: true,
         y_align: Clutter.ActorAlign.CENTER,
@@ -96,35 +105,57 @@ function _buildActiveRow(run) {
 
     // Compact metadata: "27s elapsed · CPU 1%"
     const elapsedMs = Math.round((GLib.get_monotonic_time() - run.startedAt) / 1000);
-    row.add_child(new St.Label({
+    textStack.add_child(new St.Label({
         text: `${_fmtDur(elapsedMs)} elapsed · CPU ${run.peakCpuPct.toFixed(0)}%`,
         style_class: 'dw-build-meta',
         y_align: Clutter.ActorAlign.CENTER,
     }));
 
-    item.add_child(row);
-    item.label.hide();
+    row.add_child(textStack);
     return item;
 }
 
 function _buildHistoryRow(run) {
     const item = new PopupMenu.PopupMenuItem('', { reactive: false });
+    item.add_style_class_name('dw-build-hist-row');
+    
     const row  = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER})
     row.spacing = 8;
 
     const isShort = (run.durationMs ?? 0) < 5000;
-    row.add_child(new St.Label({ text: isShort ? '✗' : '✓', style_class: isShort ? 'dw-build-fail-icon' : 'dw-build-ok-icon' }));
-
+    
+    // Status Icon
+    row.add_child(new St.Icon({
+        icon_name: isShort ? 'process-stop-symbolic' : 'emblem-ok-symbolic',
+        style_class: isShort ? 'dw-build-fail-icon' : 'dw-build-ok-icon',
+        y_align: Clutter.ActorAlign.CENTER
+    }));
+                                
     const proj = run.projectRoot ? GLib.path_get_basename(run.projectRoot) : run.tool;
     row.add_child(new St.Label({
-        text: _truncate(proj, 22),
-        style_class: 'dw-proc-name',
+        text: _truncate(proj, 24),
+        style_class: 'dw-build-proj-name',
         x_expand: true,
         y_align: Clutter.ActorAlign.CENTER,
     }));
-    row.add_child(new St.Label({ text: _fmtDur(run.durationMs ?? 0), style_class: 'dw-muted', width: 52, y_align: Clutter.ActorAlign.CENTER }));
-    row.add_child(new St.Label({ text: `${run.peakCpuPct.toFixed(0)}%`, style_class: 'dw-muted', width: 34, y_align: Clutter.ActorAlign.CENTER }));
+    
+    // Right-aligned stats
+    const statsBox = new St.BoxLayout({ y_align: Clutter.ActorAlign.CENTER });
+    statsBox.spacing = 6;
 
+    statsBox.add_child(new St.Label({
+        text: _fmtDur(run.durationMs ?? 0),
+        style_class: 'dw-build-stat-pill',
+        y_align: Clutter.ActorAlign.CENTER
+    }));
+
+    statsBox.add_child(new St.Label({
+        text: `${run.peakCpuPct.toFixed(0)}%`,
+        style_class: 'dw-build-stat-pill',
+        y_align: Clutter.ActorAlign.CENTER
+    }));
+    
+    row.add_child(statsBox);
     item.add_child(row);
     item.label.hide();
     return item;
