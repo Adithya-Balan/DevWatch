@@ -133,11 +133,37 @@ export default class DevWatchExtension extends Extension {
         // ── Dropdown skeleton ──────────────────────────────────────────
         this._buildMenuSkeleton();
 
-        // ── Refresh on menu open ───────────────────────────────────────
+        // ── Refresh on menu open + one-time scroll setup ───────────────
+        // We wire the scroll fix here (not in enable()) so the widget tree
+        // is guaranteed to be fully realized before we walk it.
+        this._scrollSetupDone = false;
         this._menuOpenSignalId = this._indicator.menu.connect(
             'open-state-changed',
             (_menu, open) => {
-                if (open) this._refresh().catch(e => this._logError(e));
+                if (open) {
+                    // Set up scrolling once: change the internal St.ScrollView
+                    // policy from NEVER (default) to AUTOMATIC so the menu
+                    // scrolls instead of shrinking when content exceeds the
+                    // monitor height. We walk up from menu.box because
+                    // menu.box.get_parent() can be a St.Bin wrapper in
+                    // GNOME Shell 49, not the ScrollView directly.
+                    if (!this._scrollSetupDone) {
+                        let sv = this._indicator.menu._scrollView ?? null;
+                        if (!sv) {
+                            let a = this._indicator.menu.box;
+                            for (let i = 0; i < 8 && a; i++) {
+                                a = a.get_parent();
+                                if (a instanceof St.ScrollView) { sv = a; break; }
+                            }
+                        }
+                        if (sv) {
+                            sv.vscrollbar_policy = St.PolicyType.AUTOMATIC;
+                            sv.overlay_scrollbars = true;
+                        }
+                        this._scrollSetupDone = true;
+                    }
+                    this._refresh().catch(e => this._logError(e));
+                }
             }
         );
 
@@ -156,6 +182,9 @@ export default class DevWatchExtension extends Extension {
 
         // ── Apply panel menu min-width ─────────────────────────────────
         this._indicator.menu.box.add_style_class_name('devwatch-menu');
+
+        // (Scroll policy is set in open-state-changed above, once the
+        //  widget tree is fully realized.)
 
         // ── Keyboard shortcut (Super+D) ────────────────────────────────
         try {

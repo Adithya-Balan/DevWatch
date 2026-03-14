@@ -303,26 +303,67 @@ export class SnapshotManager {
                 }
             }
 
-            // ── Prefer VS Code integrated terminal ─────────────────────────
-            // Detection strategy:
-            //  • VS Code processes are never attributed to a project by processTracker
-            //    (their CWD is the home dir or install dir, not the project root),
-            //    so checking proj.editors for VS Code always yields nothing.
-            //  • Instead: if VS Code is installed (in $PATH) AND the project has no
-            //    competing IDE marker (.idea/ → JetBrains), treat it as a VS Code
-            //    project.  This is the right default for Ubuntu dev machines.
+            // ── IDE-aware editor selection ──────────────────────────────────
+            //
+            // Step 1 — Honour the editor that was actually open at snapshot time.
+            //
+            // Non-VS-Code editors (Zed, Sublime, JetBrains, vim, …) run with their
+            // CWD inside the project, so _detectEditors() captures them in
+            // proj.editors.  VS Code's processes run from a global install directory
+            // and are never attributed to a project by processTracker; for VS Code
+            // projects proj.editors will therefore be empty, and we fall through to
+            // the PATH-based VS Code detection in Step 2.
+            //
+            // This means:
+            //   • Zed / Sublime / PyCharm project       → open the saved IDE
+            //   • VS Code project (editors = [])        → Step 2 → VS Code tasks
+            //   • No IDE (headless service stack)       → Step 2 → VS Code or terminal
+
+            const VSCODE_FAMILY = new Set(['code', 'codium']);
+            const savedNonVscodeEditors = (proj.editors ?? [])
+                .filter(e => !VSCODE_FAMILY.has(e.app));
+
+            if (savedNonVscodeEditors.length > 0) {
+                // The project was developed in a non-VS-Code IDE.  Open that IDE
+                // and run the services in system terminal panels — the editor's own
+                // terminal cannot be scripted via tasks.json.
+                for (const ed of savedNonVscodeEditors) {
+                    // Re-resolve the exec path at restore time in case the binary
+                    // moved (e.g. snap refresh, new distro version, rbenv update).
+                    const resolvedExec =
+                        GLib.find_program_in_path(ed.exec) ??
+                        GLib.find_program_in_path(ed.app)  ??
+                        ed.exec;
+                    this._launchEditor({ ...ed, exec: resolvedExec }, proj.root);
+                    editors++;
+                }
+                for (const svc of runnableServices) {
+                    this._launchService(svc, svc.cwd ?? proj.root, proj.name);
+                    launched++;
+                    if (svc.port && svc.port >= 1024) this._openBrowserTab(svc.port);
+                }
+                if (runnableServices.length === 0 && services.length === 0)
+                    this._openTerminal(proj.root, proj.name, proj.branch);
+                continue;
+            }
+
+            // Step 2 — No non-VS-Code editor recorded.
+            //
+            // Try to locate VS Code (any variant) in $PATH.  The .idea/ check is
+            // kept as a safety net for snapshots taken before IDE detection was
+            // introduced and for projects that have a JetBrains workspace marker
+            // but no running IDE process at snapshot time.
             const hasJetbrainsDir = Gio.File.new_for_path(
                 GLib.build_filenamev([proj.root, '.idea'])
             ).query_exists(null);
 
-            // Resolve VS Code executable at restore time so we survive upgrades.
-            // Checked in priority order: stable → Insiders → OSS → VSCodium.
+            // Re-resolve at restore time; priority: stable → Insiders → OSS → VSCodium.
             const vscodeExec = !hasJetbrainsDir
                 ? (GLib.find_program_in_path('code') ??
                    GLib.find_program_in_path('code-insiders') ??
                    GLib.find_program_in_path('code-oss') ??
                    GLib.find_program_in_path('codium') ??
-                   (proj.editors ?? []).find(e => e.app === 'code' || e.app === 'codium')?.exec ??
+                   (proj.editors ?? []).find(e => VSCODE_FAMILY.has(e.app))?.exec ??
                    null)
                 : null;
 
@@ -348,9 +389,8 @@ export class SnapshotManager {
                 }
             }
 
-            // ── Fallback: open non-VS Code editors + system terminals ───────
+            // ── Fallback: JetBrains (.idea/) or no IDE found ────────────────
             for (const ed of (proj.editors ?? [])) {
-                if (ed.app === 'code' || ed.app === 'codium') continue; // already attempted above
                 this._launchEditor(ed, proj.root);
                 editors++;
             }

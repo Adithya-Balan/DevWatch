@@ -7,6 +7,12 @@
     min-width: 420px;
 }
 
+/* The scroll policy on the internal St.ScrollView is changed to AUTOMATIC
+ * in extension.js (open-state-changed). No CSS max-height is needed here
+ * because GNOME Shell's layout manager already constrains the popup's outer
+ * boxPointer to the available screen height. The policy change alone causes
+ * the menu to scroll rather than compress when content exceeds that height. */
+
 /* Remove grey expansion card background — scoped to our menu only          */
 .devwatch-menu .popup-sub-menu {
     background-color: transparent;
@@ -15,6 +21,9 @@
     padding-top: 0;
     padding-bottom: 4px;
     padding-left: 16px;
+    /* max-height: none — sub-menus expand to natural height; the parent
+     * scroll view (policy=AUTOMATIC) handles overall menu overflow. */
+    max-height: none;
 }
 
 /* Visual margin between project blocks (collapsed and expanded)           */
@@ -123,7 +132,9 @@
     color: #cccccc;
     padding-top: 8px;
     padding-bottom: 8px;
-    x-expand: true;
+    /* x-expand is intentionally NOT set here — the expanding spacer in the
+     * headerRow JS layout is responsible for pushing the Save button right.
+     * Setting x-expand on the label steals all space from the spacer. */
     y-align: center;
 }
 /* Alert section header — slightly warmer than normal section labels */
@@ -136,15 +147,17 @@
     x-expand: true;
     y-align: center;
 }
+/* Right-anchored secondary action — sits between section title and ▼ arrow */
 .dw-section-action {
     font-size: 11px;
-    color: #78aeed;
-    padding: 4px 12px;
-    border-radius: 6px;
+    font-weight: normal;
+    color: rgba(232, 160, 64, 0.65);
+    padding: 2px 8px;
+    border-radius: 5px;
 }
 .dw-section-action:hover {
-    color: #b0d0f7;
-    background-color: rgba(120,174,237,0.14);
+    color: #e8a040;
+    background-color: rgba(232, 160, 64, 0.1);
 }
 .dw-section-action-danger {
     font-size: 11px;
@@ -315,6 +328,30 @@
     color: #ed333b;
     background-color: rgba(237,51,59,0.12);
 }
+/* Resume pill — primary action in session rows */
+.dw-btn-resume {
+    font-size: 11px;
+    font-weight: 500;
+    color: #78aeed;
+    padding: 3px 10px;
+    border-radius: 5px;
+    background-color: rgba(120,174,237,0.11);
+}
+.dw-btn-resume:hover {
+    color: #c0d8f8;
+    background-color: rgba(120,174,237,0.22);
+}
+/* × dismiss — ghost button, reveals red on hover */
+.dw-btn-snap-delete {
+    font-size: 13px;
+    color: #525252;
+    padding: 3px 8px;
+    border-radius: 5px;
+}
+.dw-btn-snap-delete:hover {
+    color: #ed333b;
+    background-color: rgba(237,51,59,0.12);
+}
 
 /* ── Cleanup / Issues ──────────────────────────────────────────────────────── */
 .dw-issue-ok {
@@ -339,26 +376,49 @@
 .dw-issue-reason-frozen  { color: #ed333b; background-color: rgba(237,51,59,0.10); }
 
 /* ── Snapshots ─────────────────────────────────────────────────────────────── */
+
+/* Override the 1px sub-menu padding for session-specific row classes       */
+.devwatch-menu .popup-sub-menu .dw-snap-item {
+    padding-top: 7px;
+    padding-bottom: 7px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+.devwatch-menu .popup-sub-menu .dw-last-workspace {
+    padding-top: 7px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    margin-bottom: 3px;
+    background-color: rgba(120,174,237,0.04);
+    border-radius: 5px;
+}
+.devwatch-menu .popup-sub-menu .dw-snap-naming-row {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
 .dw-snap-name {
     font-size: 12px;
-    font-weight: bold;
+    font-weight: 600;
     color: #dddddd;
     x-expand: true;
     y-align: center;
 }
+/* Date — compact, no fixed width */
+.dw-snap-date {
+    font-size: 10px;
+    color: #666666;
+    y-align: center;
+    padding-left: 4px;
+    padding-right: 2px;
+}
+/* Keep for older snapshots loaded before the rename */
 .dw-snap-meta {
     font-size: 10px;
-    color: #888888;
+    color: #666666;
     y-align: center;
-    width: 80px;
 }
 
-/* Last Workspace sticky entry                                               */
-.dw-last-workspace {
-    border-bottom: 1px solid rgba(255,255,255,0.07);
-    margin-bottom: 4px;
-    padding-bottom: 6px;
-}
+/* Last Workspace sticky header */
 .dw-last-workspace-label {
     font-size: 12px;
     font-weight: 600;
@@ -381,8 +441,8 @@
     background-color: rgba(255,255,255,0.09);
 }
 .dw-snap-naming-row {
-    padding-top: 4px;
-    padding-bottom: 4px;
+    padding-top: 5px;
+    padding-bottom: 5px;
 }
 
 /* ── Build section ─────────────────────────────────────────────────────────── */
@@ -415,4 +475,135 @@
     font-size: 11px;
     color: #f8e45c;
     padding: 1px 0;
+}
+
+/* ── Session Cards — warm amber theme ──────────────────────────────────────── */
+
+/* Shared card layout */
+.devwatch-menu .popup-sub-menu .dw-session-card,
+.devwatch-menu .popup-sub-menu .dw-session-card-primary {
+    padding: 9px 12px;
+    margin-bottom: 5px;
+    margin-right: 12px;
+    margin-left: 12px;
+    border-radius: 10px;
+}
+
+/* Regular session — subtle surface */
+.devwatch-menu .popup-sub-menu .dw-session-card {
+    background-color: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Last Workspace — warm amber glow */
+.devwatch-menu .popup-sub-menu .dw-session-card-primary {
+    background-color: rgba(232, 160, 64, 0.09);
+    border: 1px solid rgba(232, 160, 64, 0.25);
+}
+
+/* Naming row spacing */
+.devwatch-menu .popup-sub-menu .dw-session-naming-row {
+    padding: 2px 10px 6px 10px;
+}
+
+/* Typography */
+.dw-session-title {
+    font-size: 13px;
+    font-weight: bold;
+    color: #f0f0f0;
+}
+.dw-session-title-primary {
+    font-size: 13px;
+    font-weight: bold;
+    color: #e8a040;
+}
+.dw-session-subtitle {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.35);
+    margin-top: 3px;
+}
+.dw-session-icon-primary {
+    color: #e8a040;
+}
+
+/* Session name entry */
+.dw-session-entry {
+    font-size: 12px;
+    color: #eeeeee;
+    background-color: rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 6px;
+    padding: 4px 10px;
+    caret-color: #e8a040;
+}
+.dw-session-entry:focus {
+    border-color: rgba(232,160,64,0.55);
+    background-color: rgba(0,0,0,0.25);
+}
+
+/* Resume — warm amber CTA */
+.dw-session-btn-resume {
+    font-size: 11px;
+    font-weight: bold;
+    color: #fff8ee;
+    background-color: rgba(195, 115, 25, 0.88);
+    padding: 4px 12px;
+    border-radius: 6px;
+}
+.dw-session-btn-resume:hover {
+    background-color: rgba(215, 130, 35, 1.0);
+}
+.dw-session-btn-resume:active {
+    background-color: rgba(165, 90, 10, 1.0);
+}
+
+/* Delete icon — clearly visible but secondary */
+.dw-session-btn-icon-danger {
+    color: rgba(255,255,255,0.6);
+    background-color: rgba(255,255,255,0.06);
+    padding: 4px 10px;
+    border-radius: 6px;
+}
+.dw-session-btn-icon-danger:hover {
+    color: #ed333b;
+    background-color: rgba(237,51,59,0.12);
+}
+
+/* Specific Session Actions */
+.dw-session-btn-save {
+    font-size: 11px;
+    font-weight: 600;
+    color: #e8a040;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background-color: rgba(232, 160, 64, 0.1);
+}
+.dw-session-btn-save:hover {
+    background-color: rgba(232, 160, 64, 0.2);
+    color: #f7b455;
+}
+.dw-session-btn-cancel {
+    font-size: 11px;
+    font-weight: 600;
+    color: #aaaaaa;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background-color: rgba(255, 255, 255, 0.08);
+}
+.dw-session-btn-cancel:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: #eeeeee;
+}
+
+.dw-session-stats {
+    font-size: 11px;
+    font-weight: 600;
+    color: #cccccc;
+    margin-top: 3px;
+}
+.dw-session-date {
+    font-size: 9px;
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.25);
+    margin-top: 1px;
 }
