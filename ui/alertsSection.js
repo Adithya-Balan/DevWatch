@@ -21,12 +21,11 @@ const SECTION_TAG = 'devwatch-alerts';
  * @param {PopupMenu.PopupMenu}      menu
  * @param {Map<string, object>}      projectMap
  * @param {{ ports: object[] }}      portResult
- * @param {{ candidates: object[] }} cleanupResult
  */
-export function buildAlertsSection(menu, projectMap, portResult, cleanupResult) {
+export function buildAlertsSection(menu, projectMap, portResult) {
     clearAlertsSection(menu);
 
-    const alerts = _collectAlerts(projectMap, portResult, cleanupResult);
+    const alerts = _collectAlerts(projectMap, portResult);
     if (alerts.length === 0) return; // Hidden entirely when healthy
 
     // Section header
@@ -62,7 +61,7 @@ export function clearAlertsSection(menu) {
 
 // ── Alert collection ───────────────────────────────────────────────────────────
 
-function _collectAlerts(projectMap, portResult, cleanupResult) {
+function _collectAlerts(projectMap, portResult) {
     const alerts = [];
 
     // High RAM / CPU per project
@@ -77,51 +76,7 @@ function _collectAlerts(projectMap, portResult, cleanupResult) {
         }
     }
 
-    // Cleanup candidates
-    const candidates = cleanupResult?.candidates ?? [];
-    const zombies  = candidates.filter(c => c.reason === 'zombie');
-    const orphans  = candidates.filter(c => c.reason === 'orphan');
-    const idles    = candidates.filter(c => c.reason === 'idle_dev');
-
-    if (zombies.length > 0) {
-        alerts.push({
-            text: `⚠  ${zombies.length} zombie process${zombies.length !== 1 ? 'es' : ''} — system will reap`,
-            severity: 'high',
-        });
-    }
-    if (orphans.length > 0) {
-        alerts.push({
-            text: `⚠  ${orphans.length} orphan process${orphans.length !== 1 ? 'es' : ''} running without a project`,
-            severity: 'warn',
-        });
-    }
-    for (const c of idles.slice(0, 2)) {
-        const name = _cleanName(c.name);
-        const idle = c.idleMs != null ? _formatDuration(c.idleMs) : '?';
-        alerts.push({
-            text: `⚠  ${name}  idle for ${idle}`,
-            severity: 'warn',
-        });
-    }
-
     return alerts.slice(0, 5);
-}
-
-function _cleanName(name) {
-    if (!name) return 'process';
-    const n = name.replace(/.*\//, '');
-    if (/^python\d*(\.\d+)?$/.test(n)) return 'Python server';
-    if (/^node$/.test(n))              return 'Node server';
-    return n;
-}
-
-function _formatDuration(ms) {
-    if (!ms) return '';
-    if (ms < 60_000)     return `${Math.floor(ms / 1000)}s`;
-    if (ms < 3_600_000)  return `${Math.floor(ms / 60_000)}m`;
-    const h = Math.floor(ms / 3_600_000);
-    const m = Math.floor((ms % 3_600_000) / 60_000);
-    return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
 function _addSep(menu) {

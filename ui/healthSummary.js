@@ -19,12 +19,10 @@ const SECTION_TAG = 'devwatch-summary';
  * @param {PopupMenu.PopupMenu}      menu
  * @param {Map<string, object>}      projectMap
  * @param {{ ports: object[] }}      portResult
- * @param {{ candidates: object[] }} cleanupResult
  * @param {() => void}               onRefresh
  * @param {() => void}               onStopAll
- * @param {() => void}               onCleanAll
  */
-export function buildHealthSummary(menu, projectMap, portResult, cleanupResult, onRefresh, onStopAll, onCleanAll) {
+export function buildHealthSummary(menu, projectMap, portResult, onRefresh, onStopAll) {
     clearHealthSummary(menu);
 
     const item = new PopupMenu.PopupBaseMenuItem({ reactive: false });
@@ -50,17 +48,9 @@ export function buildHealthSummary(menu, projectMap, portResult, cleanupResult, 
     const statsLine = _buildStatsLine(projectMap, portResult);
     infoBox.add_child(new St.Label({ text: statsLine, style_class: 'dw-summary-stats' }));
 
-    // quick action buttons: [Clean Dev Environment]  [Stop All]
+    // quick action buttons: [Stop All]
     const actionsRow = new St.BoxLayout({ x_expand: false });
     actionsRow.spacing = 8;
-
-    const cleanBtn = new St.Button({
-        label: 'Clean Environment',
-        style_class: 'dw-summary-action-btn',
-        reactive: true, can_focus: true, track_hover: true,
-    });
-    cleanBtn.connect('clicked', () => onCleanAll?.());
-    actionsRow.add_child(cleanBtn);
 
     const stopAllBtn = new St.Button({
         label: 'Stop All Projects',
@@ -73,7 +63,7 @@ export function buildHealthSummary(menu, projectMap, portResult, cleanupResult, 
     infoBox.add_child(actionsRow);
 
     // proactive alert lines: port conflicts, memory spikes, zombies
-    const alertLines = _buildAlertLines(projectMap, cleanupResult);
+    const alertLines = _buildAlertLines(projectMap);
     for (const line of alertLines) {
         infoBox.add_child(new St.Label({ text: line, style_class: 'dw-summary-alert' }));
     }
@@ -125,7 +115,7 @@ function _buildStatsLine(projectMap, portResult) {
     return parts.join('  ·  ');
 }
 
-function _buildAlertLines(projectMap, cleanupResult) {
+function _buildAlertLines(projectMap) {
     const alerts = [];
 
     // High CPU / RAM per project
@@ -138,15 +128,6 @@ function _buildAlertLines(projectMap, cleanupResult) {
                 alerts.push(`⚠  ${p.name}  RAM high (${ramGb.toFixed(1)} GB)`);
         }
     }
-
-    // Zombie / orphan processes from cleanup engine
-    const candidates = cleanupResult?.candidates ?? [];
-    const zombies = candidates.filter(c => c.reason === 'zombie');
-    const orphans = candidates.filter(c => c.reason === 'orphan');
-    if (zombies.length > 0)
-        alerts.push(`⚠  ${zombies.length} zombie process${zombies.length !== 1 ? 'es' : ''} detected`);
-    if (orphans.length > 0)
-        alerts.push(`⚠  ${orphans.length} orphan process${orphans.length !== 1 ? 'es' : ''} running`);
 
     return alerts.slice(0, 3);
 }

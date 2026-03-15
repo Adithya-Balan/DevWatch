@@ -36,17 +36,6 @@
       </description>
     </key>
 
-    <!-- ── Cleanup engine ─────────────────────────────────────────────── -->
-    <key name="idle-threshold-minutes" type="i">
-      <default>10</default>
-      <summary>Minutes before a dev tool is considered idle</summary>
-      <description>
-        A dev tool (npm, node, cargo, …) with CPU below 0.5% for this many
-        minutes with no open port is flagged as an idle-dev candidate.
-        Valid range: 1–60 minutes.
-      </description>
-      <range min="1" max="60"/>
-    </key>
 
     <!-- ── Build performance ──────────────────────────────────────────── -->
     <key name="max-build-history" type="i">

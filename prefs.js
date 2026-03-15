@@ -79,31 +79,6 @@ export default class DevWatchPreferences extends ExtensionPreferences {
         settings.bind('notify-port-conflicts', notifyRow, 'active', 0);
         portsGroup.add(notifyRow);
 
-        // ── Page: Cleanup ──────────────────────────────────────────────────
-        const cleanupPage = new Adw.PreferencesPage({
-            title: _('Cleanup'),
-            icon_name: 'user-trash-symbolic',
-        });
-        window.add(cleanupPage);
-
-        const cleanupGroup = new Adw.PreferencesGroup({
-            title: _('Idle detection'),
-            description: _('Tune when dev tools are flagged as idle candidates for cleanup.'),
-        });
-        cleanupPage.add(cleanupGroup);
-
-        const idleRow = new Adw.SpinRow({
-            title: _('Idle threshold'),
-            subtitle: _('Minutes of <0.5 % CPU (with no open port) before a dev tool is flagged idle (1 – 60)'),
-            adjustment: new Gtk.Adjustment({
-                lower: 1,
-                upper: 60,
-                step_increment: 1,
-                page_increment: 5,
-            }),
-        });
-        settings.bind('idle-threshold-minutes', idleRow, 'value', 0);
-        cleanupGroup.add(idleRow);
 
         // ── Page: Performance ──────────────────────────────────────────────
         const perfPage = new Adw.PreferencesPage({
