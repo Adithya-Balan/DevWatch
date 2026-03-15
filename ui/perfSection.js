@@ -26,7 +26,7 @@ export function buildPerfSection(menu, buildResult, maxRows = DEFAULT_MAX_HISTOR
     const titleItem = new PopupMenu.PopupMenuItem('', { reactive: false });
     titleItem._devwatchSection = SECTION_TAG;
     const titleRow = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER });
-    titleRow.set_style('margin-top: 6px; margin-bottom: 2px;');
+    titleRow.set_style('margin-top: 8px; margin-bottom: 4px;');
     titleRow.add_child(new St.Label({ text: _('Build Activity'), style_class: 'dw-section-label' }));
     titleItem.add_child(titleRow);
     titleItem.label.hide();

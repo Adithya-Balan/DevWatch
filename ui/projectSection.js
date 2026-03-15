@@ -79,7 +79,7 @@ function _buildProjectRow(project, pidToPort) {
     // Card-style container: soft background + left indent for the service list
     sub.menu.actor.set_style(
         'background-color: rgba(255,255,255,0.05); border-radius: 8px;' +
-        'padding: 4px 0 4px 14px; margin-top: 2px;' +
+        'padding: 4px 0 4px 14px; margin-top: 6px;' +
         'border: 1px solid rgba(255,255,255,0.07);'
     );
 

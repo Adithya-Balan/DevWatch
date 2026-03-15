@@ -25,7 +25,7 @@ export function buildSnapshotSection(menu, snapshots, callbacks, lastWorkspace =
 
     // ── Header row ────────────────────────────────────────────────────────
     const headerRow = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER });
-    headerRow.set_style('margin-top: 6px; margin-bottom: 6px; margin-right: 4px;');
+    headerRow.set_style('margin-top: 8px; margin-bottom: 6px; margin-right: 4px;');
 
     // Give x_expand directly to the label as a GObject property (not CSS).
     // This tells the parent BoxLayout's layout engine to allocate all extra

@@ -19,7 +19,7 @@
     box-shadow: none;
     margin: 0;
     padding-top: 0;
-    padding-bottom: 4px;
+    padding-bottom: 0px;
     padding-left: 16px;
     /* max-height: none — sub-menus expand to natural height; the parent
      * scroll view (policy=AUTOMATIC) handles overall menu overflow. */
@@ -39,15 +39,15 @@
 
 /* Consistent row padding for all items inside our menu */
 .devwatch-menu .popup-menu-item {
-    padding-top: 5px;
-    padding-bottom: 5px;
+    padding-top: 4px;
+    padding-bottom: 4px;
 }
 
 /* Compact padding for service rows nested inside an expanded project      */
 .devwatch-menu .popup-sub-menu .popup-menu-item {
     padding-top: 1px;
     padding-bottom: 1px;
-    min-height: 0;
+    min-height: 24px;
 }
 
 /* Actions row: top margin provides separation without a hard divider line  */
@@ -130,8 +130,8 @@
     font-size: 12px;
     font-weight: 600;
     color: #cccccc;
-    padding-top: 8px;
-    padding-bottom: 8px;
+    padding-top: 6px;
+    padding-bottom: 2px;
     /* x-expand is intentionally NOT set here — the expanding spacer in the
      * headerRow JS layout is responsible for pushing the Save button right.
      * Setting x-expand on the label steals all space from the spacer. */
@@ -142,8 +142,8 @@
     font-size: 12px;
     font-weight: 600;
     color: #f8e45c;
-    padding-top: 8px;
-    padding-bottom: 8px;
+    padding-top: 10px;
+    padding-bottom: 4px;
     x-expand: true;
     y-align: center;
 }
@@ -461,12 +461,12 @@
 
 /* History sub-menu item tweaks */
 .devwatch-menu .popup-sub-menu .dw-build-hist-row {
-    padding-top: 5px;
-    padding-bottom: 5px;
+    padding-top: 2px;
+    padding-bottom: 2px;
     margin-right: 12px;
 }
-.dw-build-ok-icon     { color: #57e389; font-size: 12px; width: 18px; y-align: center; }
-.dw-build-fail-icon   { color: #ed333b; font-size: 12px; width: 18px; y-align: center; }
+.dw-build-ok-icon     { color: #57e389; icon-size: 14px; margin-right: 8px; }
+.dw-build-fail-icon   { color: #ed333b; icon-size: 14px; margin-right: 8px; }
 .dw-build-proj-name   { font-size: 12px; font-weight: 500; color: #cccccc; x-expand: true; y-align: center; }
 
 .dw-build-stat-pill {
@@ -480,7 +480,8 @@
     font-family: monospace;
 }
 
-.dw-build-hist-hdr    { font-size: 12px; color: #dddddd; font-weight: 600; padding-top: 8px; padding-bottom: 8px; }
+.dw-build-hist-hdr    { font-size: 12px; color: #dddddd; font-weight: 600; padding-top: 10px;
+    padding-bottom: 4px; }
 
 /* ── Process sub-rows ──────────────────────────────────────────────────────── */
 .dw-proc-name   { font-size: 11px; color: #b0b0b0; x-expand: true; y-align: center; }
@@ -635,3 +636,22 @@
     color: rgba(255, 255, 255, 0.25);
     margin-top: 1px;
 }
+
+/* Force minimum heights so items never squash and instead trigger the ScrollView */
+.devwatch-menu .popup-menu-item {
+    min-height: 24px;
+}
+.devwatch-menu .popup-separator-menu-item {
+    min-height: 6px;
+    padding-top: 1px;
+    padding-bottom: 1px;
+    margin: 0;
+}
+.devwatch-menu .popup-sub-menu-item {
+    min-height: 26px;
+}
+.dw-build-active-card, .dw-session-card, .dw-session-card-primary {
+    min-height: 48px;
+}
+
+.dw-build-hist-row { min-height: 28px; }
