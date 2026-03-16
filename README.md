@@ -95,28 +95,120 @@ DevWatch fills that gap by mapping running system processes back to your develop
 
 ## Installation
 
-### From Source (Development)
+### Local Setup Guide (For Contributors)
+
+This is the recommended setup flow for open-source contributors on Linux.
+
+### 1. Install system dependencies
+
+DevWatch runs as a GNOME Shell extension and relies on a few standard Linux tools.
+
+Ubuntu / Debian:
 
 ```bash
-# 1. Clone the repository
+sudo apt update
+sudo apt install -y git make gettext-base gettext gnome-shell-extension-prefs
+```
+
+Fedora:
+
+```bash
+sudo dnf install -y git make gettext gnome-extensions-app
+```
+
+Arch Linux:
+
+```bash
+sudo pacman -S --needed git make gettext gnome-extensions
+```
+
+Also ensure these are available:
+- GNOME Shell 45+
+- `ss` (usually from `iproute2`)
+- `glib-compile-schemas` (from GLib tools, usually preinstalled with GNOME)
+
+### 2. Clone the project
+
+```bash
 git clone https://github.com/Adithya-Balan/DevWatch.git
 cd DevWatch
+```
 
-# 2. Symlink into GNOME's extension directory
+### 3. Link the extension into GNOME
+
+```bash
 make link
+```
 
-# 3. Log out and log back in (required once on GNOME Wayland)
-#    Then enable the extension:
+What this does:
+- Symlinks project files into `~/.local/share/gnome-shell/extensions/devwatch@github.io/`
+- Compiles GSettings schemas from `schemas/`
+
+Run `make link` again whenever you add new files.
+
+### 4. Enable the extension
+
+```bash
 gnome-extensions enable devwatch@github.io
 ```
 
-### Verify it loaded
+### 5. Verify it loaded
 
 ```bash
 gnome-extensions info devwatch@github.io
 ```
 
-You should see `● DevWatch` appear in the top-right panel area.
+Expected result:
+- `Enabled: Yes`
+- `State: ENABLED` (or equivalent healthy state)
+
+You should now see **DevWatch** in the GNOME top panel.
+
+### 6. Test your changes locally
+
+After editing code:
+
+```bash
+make link
+gnome-extensions disable devwatch@github.io
+gnome-extensions enable devwatch@github.io
+```
+
+Watch logs while testing:
+
+```bash
+make log
+# or
+journalctl -f -o cat /usr/bin/gnome-shell
+```
+
+### 7. Wayland note (important)
+
+On GNOME Wayland, Shell module reload can be sticky after syntax/runtime failures.
+If an old error appears to persist:
+- Disable/enable extension again.
+- If still broken, log out and log back in.
+
+### 8. Safe testing in an isolated nested shell
+
+```bash
+make nested
+```
+
+Inside the nested session terminal:
+
+```bash
+gnome-extensions enable devwatch@github.io
+```
+
+This is the safest way to test major UI or extension lifecycle changes.
+
+### 9. Build distributable package (optional)
+
+```bash
+make pack
+unzip -l devwatch@github.io.shell-extension.zip
+```
 
 ---
 
@@ -141,7 +233,8 @@ DevWatch/
 ├── ui/
 │   ├── projectSection.js ← Active Projects section (process rows + Open Terminal)
 │   ├── portSection.js    ← Active Ports section (Kill + Copy PID buttons)
-│   ├── cleanupSection.js ← Cleanup Candidates section (Clean All + Kill per row)
+│   ├── alertsSection.js  ← Conflict alerts & immediate actions
+│   ├── healthSummary.js  ← System and project health summary widget
 │   ├── snapshotSection.js← Session Snapshot: Save Now, Restore, Delete rows
 │   └── perfSection.js    ← Build Performance: active builds + run history (Pillar 5)
 ├── core/
@@ -149,7 +242,6 @@ DevWatch/
 │   ├── processTracker.js ← /proc traversal, process→project mapping
 │   ├── portMonitor.js    ← ss -tulnp parsing + runtime tracking + conflict detection
 │   ├── conflictNotifier.js ← GNOME notifications for newly occupied dev ports
-│   ├── cleanupEngine.js  ← Zombie / orphan / idle-dev detection + candidate scoring
 │   ├── snapshotManager.js← Save/list/load/restore/delete session JSON snapshots
 │   └── buildDetector.js  ← Build detection + peak CPU/RAM tracking + persisted history
 └── utils/
@@ -279,8 +371,8 @@ Use [GitHub Issues](https://github.com/Adithya-Balan/DevWatch/issues). Include:
 - [x] `core/conflictNotifier.js` — GNOME notifications on newly occupied dev ports (Step 10)
 - [x] One-click Copy PID + Open Terminal at project root (Step 11)
 - [x] **Pillar 2 complete** — Intelligent port & service control (Step 12)
-- [x] `core/cleanupEngine.js` — zombie / orphan / idle-dev candidate detection (Step 13)
-- [x] `ui/cleanupSection.js` — Cleanup Candidates renderer with Clean All + Kill (Step 14)
+- [x] `ui/healthSummary.js` — zombie / orphan / idle-dev candidate detection (Step 13)
+- [x] `ui/alertsSection.js` — Cleanup Candidates renderer with Clean All + Kill (Step 14)
 - [x] Pillar 3 wired into extension.js + status dot updated (Step 15)
 - [x] **Pillar 3 complete** — Dev environment cleanup engine (Step 16)
 - [x] `core/snapshotManager.js` — save/list/load/restore/delete session JSON (Step 17)
