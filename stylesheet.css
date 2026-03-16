@@ -450,16 +450,21 @@
     background-color: rgba(120, 174, 237, 0.10);
     border: 1px solid rgba(120, 174, 237, 0.22);
     border-radius: 10px;
-    padding: 8px 11px;
+    padding: 10px 13px;
     margin-bottom: 7px;
     margin-left: 12px;
     margin-right: 12px;
 }
-.dw-build-active-row { spacing: 8px; y-align: center; }
+.dw-build-active-row { spacing: 10px; y-align: center; }
 .dw-build-active-icon { color: #8cc0ff; icon-size: 13px; margin-right: 5px; y-align: center; }
-.dw-build-active-text { spacing: 2px; }
+.dw-build-active-text { spacing: 3px; }
 .dw-build-status      { font-size: 13px; font-weight: 700; color: #f4f4f4; y-align: center; }
 .dw-build-meta        { font-size: 10px; color: rgba(232, 232, 232, 0.70); y-align: center; padding-top: 0; }
+.dw-build-meta-row    { spacing: 7px; y-align: center; }
+.dw-build-meta-time   { color: rgba(238, 238, 238, 0.90); font-weight: 600; }
+.dw-build-meta-label  { color: rgba(220, 220, 220, 0.72); }
+.dw-build-meta-cpu    { color: rgba(182, 220, 255, 0.90); font-weight: 600; }
+.dw-build-meta-sep    { color: rgba(220, 220, 220, 0.45); font-size: 10px; }
 .dw-build-empty       { font-size: 11px; color: rgba(240, 240, 240, 0.58); padding: 2px 0; }
 
 /* History sub-menu item tweaks */

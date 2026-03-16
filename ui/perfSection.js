@@ -119,15 +119,36 @@ function _buildActiveRow(run) {
         y_align: Clutter.ActorAlign.CENTER,
     }));
 
-    // Compact metadata: "27s elapsed · CPU 1%"
+    // Metadata row with explicit chunks for better scanability
     const startedAtUs = Number(run.startedAt ?? GLib.get_monotonic_time());
     const elapsedMs = Math.max(0, Math.round((GLib.get_monotonic_time() - startedAtUs) / 1000));
     const cpuPct = run.peakCpuPct ?? 0;
-    textStack.add_child(new St.Label({
-        text: `${_fmtDur(elapsedMs)} elapsed · CPU ${cpuPct.toFixed(0)}%`,
-        style_class: 'dw-build-meta',
+    const metaRow = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER });
+    metaRow.add_style_class_name('dw-build-meta-row');
+    metaRow.spacing = 6;
+
+    metaRow.add_child(new St.Label({
+        text: _fmtDur(elapsedMs),
+        style_class: 'dw-build-meta dw-build-meta-time',
         y_align: Clutter.ActorAlign.CENTER,
     }));
+    metaRow.add_child(new St.Label({
+        text: _('elapsed'),
+        style_class: 'dw-build-meta dw-build-meta-label',
+        y_align: Clutter.ActorAlign.CENTER,
+    }));
+    metaRow.add_child(new St.Label({
+        text: '·',
+        style_class: 'dw-build-meta-sep',
+        y_align: Clutter.ActorAlign.CENTER,
+    }));
+    metaRow.add_child(new St.Label({
+        text: `CPU ${cpuPct.toFixed(0)}%`,
+        style_class: 'dw-build-meta dw-build-meta-cpu',
+        y_align: Clutter.ActorAlign.CENTER,
+    }));
+
+    textStack.add_child(metaRow);
 
     row.add_child(textStack);
     

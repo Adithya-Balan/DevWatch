@@ -170,7 +170,7 @@ function _buildRow(snap, isLastWorkspace, onRestore, onDelete) {
             style_class: 'dw-session-icon-primary'
         }));
         titleBox.add_child(new St.Label({
-            text: _('Last Workspace'),
+            text: _(' Last Workspace'),
             style_class: 'dw-session-title-primary'
         }));
     } else {
