@@ -19,8 +19,23 @@ const DEFAULT_MAX_HISTORY_ROWS = 8;
 export function buildPerfSection(menu, buildResult, maxRows = DEFAULT_MAX_HISTORY_ROWS) {
     clearPerfSection(menu);
 
-    const active  = buildResult?.active  ?? [];
-    const history = buildResult?.history ?? new Map();
+    const active = Array.isArray(buildResult?.active)
+        ? buildResult.active.filter(Boolean)
+        : [];
+    const historyBuckets = _historyBuckets(buildResult?.history);
+
+    const histRuns = [];
+    for (const runs of historyBuckets) {
+        if (Array.isArray(runs))
+            histRuns.push(...runs.filter(Boolean));
+    }
+    histRuns.sort((a, b) => (b.startedAt ?? 0) - (a.startedAt ?? 0));
+    const shown = histRuns.slice(0, maxRows);
+
+    // If completely empty, render nothing at all to save space
+    if (active.length === 0 && shown.length === 0) {
+        return;
+    }
 
     // Section header
     const titleItem = new PopupMenu.PopupMenuItem('', { reactive: false });
@@ -33,18 +48,20 @@ export function buildPerfSection(menu, buildResult, maxRows = DEFAULT_MAX_HISTOR
     menu.addMenuItem(titleItem);
 
     // ── Active builds ──────────────────────────────────────────────────────
-    for (const run of active) {
-        const item = _buildActiveRow(run);
-        item._devwatchSection = SECTION_TAG;
-        menu.addMenuItem(item);
+    if (active.length === 0) {
+        const emptyActive = new PopupMenu.PopupMenuItem(_('  No active builds'), { reactive: false });
+        emptyActive.label.style_class = 'dw-dim';
+        emptyActive._devwatchSection = SECTION_TAG;
+        menu.addMenuItem(emptyActive);
+    } else {
+        for (const run of active) {
+            const item = _buildActiveRow(run);
+            item._devwatchSection = SECTION_TAG;
+            menu.addMenuItem(item);
+        }
     }
 
     // ── Build History ──────────────────────────────────────────────────────
-    const histRuns = [];
-    for (const runs of history.values()) histRuns.push(...runs);
-    histRuns.sort((a, b) => (b.startedAt ?? 0) - (a.startedAt ?? 0));
-    const shown = histRuns.slice(0, maxRows);
-
     if (shown.length > 0) {
         // Collapse history inside a sub-menu to reduce panel height
         const histSub = new PopupMenu.PopupSubMenuMenuItem('', false);
@@ -62,11 +79,6 @@ export function buildPerfSection(menu, buildResult, maxRows = DEFAULT_MAX_HISTOR
             histSub.menu.addMenuItem(more);
         }
         menu.addMenuItem(histSub);
-    } else if (active.length === 0) {
-        const empty = new PopupMenu.PopupMenuItem(_('  No build activity yet'), { reactive: false });
-        empty.label.style_class = 'dw-dim';
-        empty._devwatchSection = SECTION_TAG;
-        menu.addMenuItem(empty);
     }
 
     const sep = new PopupMenu.PopupSeparatorMenuItem();
@@ -95,7 +107,9 @@ function _buildActiveRow(run) {
     const textStack = new St.BoxLayout({ vertical: true, x_expand: true, y_align: Clutter.ActorAlign.CENTER });
 
     // "Building tracktite" — project name is the primary label
-    const proj = run.projectRoot ? GLib.path_get_basename(run.projectRoot) : run.tool;
+    const proj = run.projectRoot
+        ? GLib.path_get_basename(run.projectRoot)
+        : (run.tool ?? 'build');
     textStack.add_child(new St.Label({
         text: `Building ${_truncate(proj, 24)}`,
         style_class: 'dw-build-status',
@@ -104,14 +118,20 @@ function _buildActiveRow(run) {
     }));
 
     // Compact metadata: "27s elapsed · CPU 1%"
-    const elapsedMs = Math.round((GLib.get_monotonic_time() - run.startedAt) / 1000);
+    const startedAtUs = Number(run.startedAt ?? GLib.get_monotonic_time());
+    const elapsedMs = Math.max(0, Math.round((GLib.get_monotonic_time() - startedAtUs) / 1000));
+    const cpuPct = run.peakCpuPct ?? 0;
     textStack.add_child(new St.Label({
-        text: `${_fmtDur(elapsedMs)} elapsed · CPU ${run.peakCpuPct.toFixed(0)}%`,
+        text: `${_fmtDur(elapsedMs)} elapsed · CPU ${cpuPct.toFixed(0)}%`,
         style_class: 'dw-build-meta',
         y_align: Clutter.ActorAlign.CENTER,
     }));
 
     row.add_child(textStack);
+    
+    item.add_child(row);
+    item.label.hide();
+    
     return item;
 }
 
@@ -131,7 +151,9 @@ function _buildHistoryRow(run) {
         y_align: Clutter.ActorAlign.CENTER
     }));
                                 
-    const proj = run.projectRoot ? GLib.path_get_basename(run.projectRoot) : run.tool;
+    const proj = run.projectRoot
+        ? GLib.path_get_basename(run.projectRoot)
+        : (run.tool ?? 'build');
     row.add_child(new St.Label({
         text: _truncate(proj, 24),
         style_class: 'dw-build-proj-name',
@@ -149,8 +171,9 @@ function _buildHistoryRow(run) {
         y_align: Clutter.ActorAlign.CENTER
     }));
 
+    const cpuPct = run.peakCpuPct ?? 0;
     statsBox.add_child(new St.Label({
-        text: `${run.peakCpuPct.toFixed(0)}%`,
+        text: `${cpuPct.toFixed(0)}%`,
         style_class: 'dw-build-stat-pill',
         y_align: Clutter.ActorAlign.CENTER
     }));
@@ -167,4 +190,13 @@ function _fmtDur(ms) {
     if (ms < 3_600_000)  return `${Math.floor(ms / 60000)}m ${Math.floor((ms % 60000) / 1000)}s`;
     return `${Math.floor(ms / 3_600_000)}h ${Math.floor((ms % 3_600_000) / 60000)}m`;
 }
+
+function _historyBuckets(history) {
+    if (history instanceof Map)
+        return history.values();
+    if (history && typeof history === 'object')
+        return Object.values(history);
+    return [];
+}
+
 function _truncate(s, n) { if (!s) return ''; return s.length > n ? s.slice(0, n - 1) + '…' : s; }
