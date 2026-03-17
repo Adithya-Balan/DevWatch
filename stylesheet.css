@@ -607,3 +607,30 @@
     color: rgba(255, 255, 255, 0.25);
     margin-top: 1px;
 }
+
+/* ── Build Output Section ──────────────────────────────────────────────────── */
+.devwatch-section-header {
+    font-size: 12px;
+    font-weight: 600;
+    color: #cccccc;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    reactive: false;
+    style-class: 'devwatch-section-header';
+}
+
+.devwatch-build-output-line {
+    font-size: 10px;
+    font-family: 'Monospace';
+    color: #888888;
+    padding: 2px 8px;
+    background-color: rgba(0, 0, 0, 0.2);
+    margin: 2px 8px;
+    border-radius: 3px;
+}
+
+.devwatch-recent-log-item {
+    font-size: 11px;
+    color: #78aeed;
+    padding: 4px 8px;
+}

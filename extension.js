@@ -391,6 +391,14 @@ export default class DevWatchExtension extends Extension {
         );
         buildPerfSection(this._indicator.menu, buildResult, maxBuildHistory);
 
+        // Build Output section — shows captured output and logs
+        buildBuildOutputSection(
+            this._indicator.menu,
+            buildResult.active,
+            buildResult.history,
+            this._buildDetector._logger
+        );
+
         // Update status dot colour
         this._updateStatusDot(projectMap, portResult, cleanupResult, buildResult);
 

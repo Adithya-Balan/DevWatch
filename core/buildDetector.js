@@ -124,6 +124,7 @@ export class BuildDetector {
     start(cancellable) {
         this._cancellable = cancellable;
         this._loadHistory();
+        this._logger.start(cancellable);
     }
 
     stop() {
@@ -195,6 +196,9 @@ export class BuildDetector {
                 bucket.length = MAX_HISTORY_PER_PROJECT;
             this._history.set(key, bucket);
             historyDirty = true;
+
+            // Stop capturing output for this build
+            this._logger.stopCapture(pid);
 
             console.log(`[DevWatch:BuildDetector] Build finished: ${run.tool} (PID ${pid}) — ${run.durationMs} ms, peak CPU ${run.peakCpuPct.toFixed(1)}%, peak RAM ${Math.round(run.peakRamKb / 1024)} MB`);
         }
