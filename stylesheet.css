@@ -666,3 +666,40 @@
 }
 
 .dw-build-hist-row { min-height: 26px; }
+
+/* Section-level internal scroll view */
+.dw-section-scroll {
+    min-height: 180px;
+    max-height: 220px;
+    padding-right: 4px;
+}
+
+/* Remove default menu-item padding around embedded scroll containers. */
+.devwatch-menu .dw-section-scroll-item {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+/* Target approximately 4 visible entries before internal scroll appears. */
+.dw-section-scroll-projects {
+    min-height: 188px;
+    max-height: 188px;
+}
+
+.dw-section-scroll-ports {
+    min-height: 216px;
+    max-height: 216px;
+}
+
+/* Keep row density consistent with non-scrolling section rendering. */
+.devwatch-menu .dw-section-scroll .popup-sub-menu-item {
+    min-height: 44px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+.devwatch-menu .dw-section-scroll .dw-port-row {
+    min-height: 44px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}

@@ -25,6 +25,7 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import { _ } from '../utils/i18n.js';
 
 const SECTION_TAG = 'devwatch-projects';
+const INTERNAL_SCROLL_THRESHOLD = 4;
 
 // ── Public API ─────────────────────────────────────────────────────────────────
 
@@ -58,10 +59,40 @@ export function buildProjectSection(menu, projectMap, portResult) {
     }
 
     const sorted = [...projectMap.values()].sort((a, b) => b.totalCpuPercent - a.totalCpuPercent);
-    for (const project of sorted) {
-        const item = _buildProjectRow(project, pidToPort);
-        item._devwatchSection = SECTION_TAG;
-        menu.addMenuItem(item);
+
+    if (sorted.length > INTERNAL_SCROLL_THRESHOLD) {
+        const scrollerItem = new PopupMenu.PopupBaseMenuItem({
+            reactive: false,
+            can_focus: false,
+            activate: false,
+        });
+        scrollerItem.add_style_class_name('dw-section-scroll-item');
+        scrollerItem._devwatchSection = SECTION_TAG;
+
+        const scrollView = new St.ScrollView({
+            style_class: 'dw-section-scroll dw-section-scroll-projects',
+            overlay_scrollbars: false,
+            reactive: true,
+            x_expand: true,
+        });
+        scrollView.set_policy(St.PolicyType.NEVER, St.PolicyType.AUTOMATIC);
+        scrollView.set_style('padding-right: 6px;');
+
+        const section = new PopupMenu.PopupMenuSection();
+        for (const project of sorted) {
+            section.addMenuItem(_buildProjectRow(project, pidToPort));
+        }
+
+        scrollView.set_child(section.actor);
+        scrollerItem.add_child(scrollView);
+        scrollerItem.label.hide();
+        menu.addMenuItem(scrollerItem);
+    } else {
+        for (const project of sorted) {
+            const item = _buildProjectRow(project, pidToPort);
+            item._devwatchSection = SECTION_TAG;
+            menu.addMenuItem(item);
+        }
     }
     _addSep(menu, SECTION_TAG);
 }

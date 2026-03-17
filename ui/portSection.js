@@ -18,6 +18,7 @@ import { _ } from '../utils/i18n.js';
 
 const SECTION_TAG = 'devwatch-ports';
 const MAX_PORTS_SHOWN = 15;
+const INTERNAL_SCROLL_THRESHOLD = 4;
 
 export function buildPortSection(menu, scanResult, onKill, showSystemPorts = false) {
     clearPortSection(menu);
@@ -51,10 +52,39 @@ export function buildPortSection(menu, scanResult, onKill, showSystemPorts = fal
     const ordered = [...devPorts, ...sysPorts]
         .filter(r => { if (seenPorts.has(r.port)) return false; seenPorts.add(r.port); return true; })
         .slice(0, MAX_PORTS_SHOWN);
-    for (const record of ordered) {
-        const item = _buildRow(record, onKill);
-        item._devwatchSection = SECTION_TAG;
-        menu.addMenuItem(item);
+    if (ordered.length > INTERNAL_SCROLL_THRESHOLD) {
+        const scrollerItem = new PopupMenu.PopupBaseMenuItem({
+            reactive: false,
+            can_focus: false,
+            activate: false,
+        });
+        scrollerItem.add_style_class_name('dw-section-scroll-item');
+        scrollerItem._devwatchSection = SECTION_TAG;
+
+        const scrollView = new St.ScrollView({
+            style_class: 'dw-section-scroll dw-section-scroll-ports',
+            overlay_scrollbars: false,
+            reactive: true,
+            x_expand: true,
+        });
+        scrollView.set_policy(St.PolicyType.NEVER, St.PolicyType.AUTOMATIC);
+        scrollView.set_style('padding-right: 6px;');
+
+        const section = new PopupMenu.PopupMenuSection();
+        for (const record of ordered) {
+            section.addMenuItem(_buildRow(record, onKill));
+        }
+
+        scrollView.set_child(section.actor);
+        scrollerItem.add_child(scrollView);
+        scrollerItem.label.hide();
+        menu.addMenuItem(scrollerItem);
+    } else {
+        for (const record of ordered) {
+            const item = _buildRow(record, onKill);
+            item._devwatchSection = SECTION_TAG;
+            menu.addMenuItem(item);
+        }
     }
 
     if (devPorts.length + sysPorts.length > MAX_PORTS_SHOWN) {
