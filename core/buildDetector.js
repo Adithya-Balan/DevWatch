@@ -42,6 +42,7 @@
 
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
+import { BuildLogger } from './buildLogger.js';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -172,6 +173,9 @@ export class BuildDetector {
                 };
                 this._active.set(proc.pid, run);
                 console.log(`[DevWatch:BuildDetector] Build started: ${lowerName} (PID ${proc.pid})`);
+
+                // Start capturing output for this build
+                this._logger.startCapture(proc.pid, lowerName, proc.projectRoot);
             }
         }
 
@@ -205,6 +209,7 @@ export class BuildDetector {
 
     /** Release all in-memory state. */
     destroy() {
+        this._logger.stop();
         this._active.clear();
         this._history.clear();
         this._cancellable = null;

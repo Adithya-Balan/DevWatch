@@ -59,7 +59,7 @@ import { buildSnapshotSection } from './ui/snapshotSection.js';
 import { BuildDetector }         from './core/buildDetector.js';
 import { buildPerfSection }      from './ui/perfSection.js';
 import { buildHealthSummary, clearHealthSummary } from './ui/healthSummary.js';
-import { buildAlertsSection } from './ui/alertsSection.js';
+import { buildBuildOutputSection } from './ui/buildOutputSection.js';
 
 /** Fallback poll interval — used before settings load (should never be needed). */
 const DEFAULT_POLL_INTERVAL_S = 10;
