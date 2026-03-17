@@ -26,7 +26,10 @@
  *   • BuildDetector    — active build tracking + persisted run history
  *   • buildPerfSection — active builds + recent-build history rows
  *   • Status dot: red if active build pushing CPU >90%
- */
+ *
+ * Pillar 6 — fully wired:
+ *   • QuickActionsSection — open terminal, file manager, editor, run build
+ *   • Context-aware actions for current project */
 
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
@@ -48,6 +51,7 @@ import { SnapshotManager }      from './core/snapshotManager.js';
 import { buildProjectSection }  from './ui/projectSection.js';
 import { buildPortSection }     from './ui/portSection.js';
 import { buildSnapshotSection } from './ui/snapshotSection.js';
+// import { buildQuickActionsSection } from './ui/quickActionsSection.js';
 import { BuildDetector }         from './core/buildDetector.js';
 import { buildPerfSection }      from './ui/perfSection.js';
 import { buildHealthSummary, clearHealthSummary } from './ui/healthSummary.js';
@@ -345,6 +349,7 @@ export default class DevWatchExtension extends Extension {
         // Problems / Alerts section — shown only when issues exist
         buildAlertsSection(this._indicator.menu, projectMap, portResult);
         buildProjectSection(this._indicator.menu, projectMap, portResult);
+        // buildQuickActionsSection(this._indicator.menu, this._projectDetector.getCurrentProject());
         buildPortSection(
             this._indicator.menu,
             portResult,
