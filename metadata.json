@@ -3,7 +3,7 @@
     "name": "DevWatch",
     "description": "Project-aware developer intelligence layer for GNOME. Tracks running projects, ports, orphan processes, and build performance directly in your panel.",
     "shell-version": ["45", "46", "47", "48", "49"],
-    "url": "https://github.com/fosshack/devwatch",
+    "url": "https://github.com/Adithya-Balan/DevWatch",
     "version-name": "0.1.0",
     "session-modes": ["user"],
     "settings-schema": "org.gnome.shell.extensions.devwatch"
