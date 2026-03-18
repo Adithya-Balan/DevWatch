@@ -14,7 +14,8 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import { _ } from '../utils/i18n.js';
 
 const SECTION_TAG = 'devwatch-snapshots';
-const MAX_ROWS = 5;
+const SNAPSHOT_SCROLL_THRESHOLD = 5;
+const SNAPSHOT_SCROLL_HEIGHT_PX = 252;
 
 export function buildSnapshotSection(menu, snapshots, callbacks, lastWorkspace = null) {
     clearSnapshotSection(menu);
@@ -121,11 +122,9 @@ export function buildSnapshotSection(menu, snapshots, callbacks, lastWorkspace =
     namingItem.visible = false;
 
     // ── Session list ────────────────────────────────────────────────────────
-    if (lastWorkspace) {
-        sub.menu.addMenuItem(_buildRow(lastWorkspace, true, onRestore, onDelete));
-    }
+    const totalItems = (lastWorkspace ? 1 : 0) + (snapshots?.length || 0);
 
-    if (!snapshots || snapshots.length === 0) {
+    if (totalItems === 0) {
         const empty = new PopupMenu.PopupMenuItem(_('  No saved sessions yet'), { reactive: false });
         empty.label.style_class = 'dw-session-subtitle';
         sub.menu.addMenuItem(empty);
@@ -133,14 +132,50 @@ export function buildSnapshotSection(menu, snapshots, callbacks, lastWorkspace =
         return;
     }
 
-    for (const snap of snapshots.slice(0, MAX_ROWS)) {
-        sub.menu.addMenuItem(_buildRow(snap, false, onRestore, onDelete));
+    let targetMenu = sub.menu;
+
+    if (totalItems > SNAPSHOT_SCROLL_THRESHOLD) {
+        const scrollerItem = new PopupMenu.PopupBaseMenuItem({
+            reactive: false,
+            can_focus: false,
+            activate: false,
+        });
+        scrollerItem.add_style_class_name('dw-section-scroll-item');
+        scrollerItem._devwatchSection = SECTION_TAG;
+
+        const scrollView = new St.ScrollView({
+            style_class: 'dw-section-scroll dw-section-scroll-snapshots',
+            overlay_scrollbars: false,
+            reactive: true,
+            enable_mouse_scrolling: true,
+            x_expand: true,
+            y_expand: false,
+        });
+        scrollView.set_policy(St.PolicyType.NEVER, St.PolicyType.AUTOMATIC);
+        scrollView.set_height(SNAPSHOT_SCROLL_HEIGHT_PX);
+
+        const scrollSection = new PopupMenu.PopupMenuSection();
+        scrollView.set_child(scrollSection.actor);
+        scrollerItem.add_child(scrollView);
+        
+        sub.menu.addMenuItem(scrollerItem);
+        targetMenu = scrollSection;
     }
-    if (snapshots.length > MAX_ROWS) {
-        const more = new PopupMenu.PopupMenuItem(`  … and ${snapshots.length - MAX_ROWS} older sessions`, { reactive: false });
-        more.label.style_class = 'dw-session-subtitle';
-        sub.menu.addMenuItem(more);
+
+    if (lastWorkspace) {
+        const item = _buildRow(lastWorkspace, true, onRestore, onDelete);
+        item._devwatchSection = SECTION_TAG;
+        targetMenu.addMenuItem(item);
     }
+
+    if (snapshots && snapshots.length > 0) {
+        for (const snap of snapshots) {
+            const item = _buildRow(snap, false, onRestore, onDelete);
+            item._devwatchSection = SECTION_TAG;
+            targetMenu.addMenuItem(item);
+        }
+    }
+    
     _addSep(menu);
 }
 
@@ -152,16 +187,17 @@ export function clearSnapshotSection(menu) {
 function _buildRow(snap, isLastWorkspace, onRestore, onDelete) {
     const item = new PopupMenu.PopupMenuItem('', { reactive: false });
     item.add_style_class_name(isLastWorkspace ? 'dw-session-card-primary' : 'dw-session-card');
-    
+
     // Overall horizontal layout
     const outer = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER });
-    outer.spacing = 8;
+    outer.spacing = 14;
 
     // Left container for Title + Subtitle
     const textStack = new St.BoxLayout({ vertical: true, x_expand: true, y_align: Clutter.ActorAlign.CENTER });
+    textStack.spacing = 2; // Fixed vertical spacing between text lines
     
     const titleBox = new St.BoxLayout({ y_align: Clutter.ActorAlign.CENTER });
-    titleBox.spacing = 6;
+    titleBox.spacing = 8;
     
     if (isLastWorkspace) {
         titleBox.add_child(new St.Icon({
@@ -212,7 +248,7 @@ function _buildRow(snap, isLastWorkspace, onRestore, onDelete) {
 
     // Right container for Actions
     const actionBox = new St.BoxLayout({ y_align: Clutter.ActorAlign.CENTER });
-    actionBox.spacing = 6;
+    actionBox.spacing = 10;
 
     const resumeBtn = new St.Button({
         label: _('Resume'),
@@ -240,7 +276,7 @@ function _buildRow(snap, isLastWorkspace, onRestore, onDelete) {
     } else {
         // Spacer for consistent alignment with normal cards having a trash button
         const spacer = new St.Widget({
-            width: 34 + 8, // matches trash icon button width + margin
+            width: 34, // roughly matches trash icon button width
             height: 1
         });
         actionBox.add_child(spacer);

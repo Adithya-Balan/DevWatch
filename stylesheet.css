@@ -521,8 +521,9 @@
 /* Shared card layout */
 .devwatch-menu .popup-sub-menu .dw-session-card,
 .devwatch-menu .popup-sub-menu .dw-session-card-primary {
-    padding: 9px 12px;
-    margin-bottom: 5px;
+    padding: 10px 14px 13px 14px;
+    margin-top: 0;
+    margin-bottom: 6px;
     margin-right: 12px;
     margin-left: 12px;
     border-radius: 10px;
@@ -647,6 +648,11 @@
     margin-top: 1px;
 }
 
+.devwatch-menu .popup-sub-menu .dw-session-card:last-child,
+.devwatch-menu .popup-sub-menu .dw-session-card-primary:last-child {
+    margin-bottom: 0;
+}
+
 /* Force minimum heights so items never squash and instead trigger the ScrollView */
 .devwatch-menu .popup-menu-item {
     min-height: 24px;
@@ -660,7 +666,7 @@
 .devwatch-menu .popup-sub-menu-item {
     min-height: 26px;
 }
-.dw-build-active-card, .dw-session-card, .dw-session-card-primary {
+.dw-build-active-card {
     min-height: 44px;
 }
 
@@ -710,3 +716,15 @@
     padding-right: 8px;
 }
 
+
+.dw-section-scroll-snapshots {
+    min-height: 252px;
+    max-height: 252px;
+    padding-bottom: 4px;
+}
+
+.devwatch-menu .dw-section-scroll-snapshots .popup-menu-item {
+    min-height: 58px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
