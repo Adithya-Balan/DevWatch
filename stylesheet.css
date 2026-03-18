@@ -243,9 +243,8 @@
 
 /* Compact rows + subtle hairline separator between entries                 */
 .devwatch-menu .dw-port-row {
-    padding-top: 4px;
-    padding-bottom: 4px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding-top: 3px;
+    padding-bottom: 3px;
 }
 
 .dw-port-project {
@@ -702,8 +701,8 @@
 
 .devwatch-menu .dw-section-scroll .dw-port-row {
     min-height: 44px;
-    padding-top: 4px;
-    padding-bottom: 4px;
+    padding-top: 3px;
+    padding-bottom: 3px;
 }
 
 /* Keep text and action buttons off the scrollbar gutter. */

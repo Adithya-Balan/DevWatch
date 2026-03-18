@@ -107,11 +107,11 @@ function _buildRow(record, onKill) {
 
     // Vertical outer: line 1 = project/name + Stop; line 2 = detail + runtime
     const outer = new St.BoxLayout({ vertical: true, x_expand: true });
-    outer.spacing = 2;
+    outer.spacing = 0;
 
     // ── Line 1: ● project-name  [Stop right-aligned] ─────────────────────
     const line1 = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER });
-    line1.spacing = 6;
+    line1.spacing = 4;
     line1.add_child(new St.Label({
         text: '●',
         style_class: record.isDevPort ? 'dw-port-dot dw-port-dot-active' : 'dw-port-dot dw-port-dot-dim',
