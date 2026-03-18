@@ -25,7 +25,8 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import { _ } from '../utils/i18n.js';
 
 const SECTION_TAG = 'devwatch-projects';
-const INTERNAL_SCROLL_THRESHOLD = 4;
+const INTERNAL_SCROLL_THRESHOLD = 5;
+const INTERNAL_SCROLL_HEIGHT_PX = 236;
 
 // ── Public API ─────────────────────────────────────────────────────────────────
 
@@ -73,23 +74,24 @@ export function buildProjectSection(menu, projectMap, portResult) {
             style_class: 'dw-section-scroll dw-section-scroll-projects',
             overlay_scrollbars: false,
             reactive: true,
+            enable_mouse_scrolling: true,
             x_expand: true,
+            y_expand: false,
         });
         scrollView.set_policy(St.PolicyType.NEVER, St.PolicyType.AUTOMATIC);
-        scrollView.set_style('padding-right: 6px;');
+        scrollView.set_height(INTERNAL_SCROLL_HEIGHT_PX);
 
         const section = new PopupMenu.PopupMenuSection();
         for (const project of sorted) {
-            section.addMenuItem(_buildProjectRow(project, pidToPort));
+            section.addMenuItem(_buildProjectRow(project, pidToPort, scrollView));
         }
 
         scrollView.set_child(section.actor);
         scrollerItem.add_child(scrollView);
-        scrollerItem.label.hide();
         menu.addMenuItem(scrollerItem);
     } else {
         for (const project of sorted) {
-            const item = _buildProjectRow(project, pidToPort);
+            const item = _buildProjectRow(project, pidToPort, null);
             item._devwatchSection = SECTION_TAG;
             menu.addMenuItem(item);
         }
@@ -104,9 +106,12 @@ export function clearProjectSection(menu) {
 
 // ── Row builders ───────────────────────────────────────────────────────────────
 
-function _buildProjectRow(project, pidToPort) {
+function _buildProjectRow(project, pidToPort, sectionScrollView) {
     const sub = new PopupMenu.PopupSubMenuMenuItem('', true);
+    sub.add_style_class_name('dw-project-row-item');
     sub.label.text = '';
+    if (sectionScrollView)
+        _wireSubmenuToParentScroll(sub, sectionScrollView);
     // Card-style container: soft background + left indent for the service list
     sub.menu.actor.set_style(
         'background-color: rgba(255,255,255,0.05); border-radius: 8px;' +
@@ -142,14 +147,14 @@ function _buildProjectRow(project, pidToPort) {
     sub.label.get_parent().insert_child_above(header, sub.label);
     sub.label.hide();
     const services = _toServices(project, pidToPort);
-    for (const svc of services) {
-        sub.menu.addMenuItem(_buildServiceRow(svc));
-    }
     if (services.length === 0) {
         const empty = new PopupMenu.PopupMenuItem('  No visible services', { reactive: false });
         empty.label.style_class = 'dw-dim';
         empty.add_style_class_name('dw-empty-services');
         sub.menu.addMenuItem(empty);
+    } else {
+        for (const svc of services)
+            sub.menu.addMenuItem(_buildServiceRow(svc));
     }
 
     // ── Actions: no divider — top padding in CSS provides separation ──────
@@ -215,7 +220,7 @@ function _buildServiceRow(svc) {
 
 /**
  * Convert raw processes into service-level items.
- * Prioritises processes that own ports, then filters out noise.
+ * Prioritises processes that own ports, then includes remaining processes.
  */
 function _toServices(project, pidToPort) {
     const seen = new Set();
@@ -237,11 +242,10 @@ function _toServices(project, pidToPort) {
         seen.add(p.pid);
     }
 
-    // Remaining meaningful processes (skip noise)
+    // Remaining processes
     const rest = project.processes
-        .filter(p => !seen.has(p.pid) && !_isNoise(p.name))
-        .sort((a, b) => b.cpuPercent - a.cpuPercent)
-        .slice(0, Math.max(0, 6 - result.length));
+        .filter(p => !seen.has(p.pid))
+        .sort((a, b) => b.cpuPercent - a.cpuPercent);
 
     for (const p of rest) {
         result.push({
@@ -325,10 +329,6 @@ function _toServiceLabel(name) {
     return _truncate(n, 24);
 }
 
-function _isNoise(name) {
-    return /^(sh|bash|dash|cat|grep|awk|sed|tail)$/.test(name);
-}
-
 function _stateSymbol(s) {
     return { R: '●', S: '○', D: '◔', Z: '✕', T: '‖', I: '○' }[s] ?? '○';
 }
@@ -349,6 +349,63 @@ function _addSep(menu, tag) {
     const sep = new PopupMenu.PopupSeparatorMenuItem();
     sep._devwatchSection = tag;
     menu.addMenuItem(sep);
+}
+
+function _wireSubmenuToParentScroll(subMenuItem, sectionScrollView) {
+    const forwardScroll = (_actor, event) => _forwardScrollTo(sectionScrollView, event);
+
+    subMenuItem.actor.connect('scroll-event', forwardScroll);
+    subMenuItem.menu.actor.connect('scroll-event', forwardScroll);
+
+    subMenuItem.menu.actor.connect('captured-event', (_actor, event) => {
+        if (event.type() !== Clutter.EventType.SCROLL)
+            return Clutter.EVENT_PROPAGATE;
+        return _forwardScrollTo(sectionScrollView, event);
+    });
+}
+
+function _forwardScrollTo(scrollView, event) {
+    const [hasDelta, delta] = _scrollDelta(event);
+    if (!hasDelta)
+        return Clutter.EVENT_PROPAGATE;
+
+    const adj = scrollView?.vadjustment;
+    if (!adj)
+        return Clutter.EVENT_PROPAGATE;
+
+    const lower = adj.lower ?? 0;
+    const upper = adj.upper ?? 0;
+    const page = adj.page_size ?? 0;
+    const value = adj.value ?? 0;
+    const max = Math.max(lower, upper - page);
+    const step = Math.max(16, adj.step_increment ?? 24);
+
+    let next = value + (delta * step);
+    if (next < lower)
+        next = lower;
+    if (next > max)
+        next = max;
+
+    if (Math.abs(next - value) < 0.0001)
+        return Clutter.EVENT_PROPAGATE;
+
+    adj.value = next;
+    return Clutter.EVENT_STOP;
+}
+
+function _scrollDelta(event) {
+    const direction = event.get_scroll_direction();
+    if (direction === Clutter.ScrollDirection.UP)
+        return [true, -1];
+    if (direction === Clutter.ScrollDirection.DOWN)
+        return [true, 1];
+    if (direction === Clutter.ScrollDirection.SMOOTH) {
+        const [, dy] = event.get_scroll_delta();
+        if (Math.abs(dy) < 0.0001)
+            return [false, 0];
+        return [true, dy];
+    }
+    return [false, 0];
 }
 
 function _stopProject(project) {

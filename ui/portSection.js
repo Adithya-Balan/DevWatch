@@ -68,7 +68,6 @@ export function buildPortSection(menu, scanResult, onKill, showSystemPorts = fal
             x_expand: true,
         });
         scrollView.set_policy(St.PolicyType.NEVER, St.PolicyType.AUTOMATIC);
-        scrollView.set_style('padding-right: 6px;');
 
         const section = new PopupMenu.PopupMenuSection();
         for (const record of ordered) {
@@ -77,7 +76,6 @@ export function buildPortSection(menu, scanResult, onKill, showSystemPorts = fal
 
         scrollView.set_child(section.actor);
         scrollerItem.add_child(scrollView);
-        scrollerItem.label.hide();
         menu.addMenuItem(scrollerItem);
     } else {
         for (const record of ordered) {

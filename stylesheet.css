@@ -671,7 +671,7 @@
 .dw-section-scroll {
     min-height: 180px;
     max-height: 220px;
-    padding-right: 4px;
+    padding-right: 8px;
 }
 
 /* Remove default menu-item padding around embedded scroll containers. */
@@ -680,20 +680,22 @@
     padding-bottom: 0;
 }
 
-/* Target approximately 4 visible entries before internal scroll appears. */
+/* Target approximately 5 visible project entries before section scroll appears. */
 .dw-section-scroll-projects {
-    min-height: 188px;
-    max-height: 188px;
+    min-height: 236px;
+    max-height: 236px;
 }
 
 .dw-section-scroll-ports {
-    min-height: 216px;
-    max-height: 216px;
+    min-height: 184px;
+    max-height: 184px;
 }
 
-/* Keep row density consistent with non-scrolling section rendering. */
-.devwatch-menu .dw-section-scroll .popup-sub-menu-item {
-    min-height: 44px;
+/* Keep row density consistent with non-scrolling section rendering.
+ * PopupSubMenuMenuItem uses the style class "popup-submenu-menu-item". */
+.devwatch-menu .dw-section-scroll .popup-submenu-menu-item,
+.devwatch-menu .dw-section-scroll .dw-project-row-item {
+    min-height: 40px;
     padding-top: 4px;
     padding-bottom: 4px;
 }
@@ -703,3 +705,9 @@
     padding-top: 4px;
     padding-bottom: 4px;
 }
+
+/* Keep text and action buttons off the scrollbar gutter. */
+.devwatch-menu .dw-section-scroll .popup-menu-item {
+    padding-right: 8px;
+}
+
