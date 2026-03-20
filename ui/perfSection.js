@@ -97,7 +97,7 @@ function _buildActiveRow(run) {
 
     const row  = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER});
     row.add_style_class_name('dw-build-active-row');
-    row.spacing = 10;
+    row.spacing = 14;
 
     row.add_child(new St.Icon({
         icon_name: 'system-run-symbolic',
@@ -107,6 +107,7 @@ function _buildActiveRow(run) {
     
     const textStack = new St.BoxLayout({ vertical: true, x_expand: true, y_align: Clutter.ActorAlign.CENTER });
     textStack.add_style_class_name('dw-build-active-text');
+    textStack.spacing = 4; // Improved vertical spacing
 
     // "Building tracktite" — project name is the primary label
     const proj = run.projectRoot
@@ -125,7 +126,7 @@ function _buildActiveRow(run) {
     const cpuPct = run.peakCpuPct ?? 0;
     const metaRow = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER });
     metaRow.add_style_class_name('dw-build-meta-row');
-    metaRow.spacing = 6;
+    metaRow.spacing = 0;
 
     metaRow.add_child(new St.Label({
         text: _fmtDur(elapsedMs),
