@@ -72,10 +72,11 @@ export function buildHealthSummary(menu, projectMap, portResult, onSettings, onS
 
     // ── Settings icon button ────────────────────────────────────────────────
     const settingsBtn = new St.Button({
+        style_class: 'dw-settings-btn',
         reactive: true, can_focus: true, track_hover: true,
         y_align: Clutter.ActorAlign.START,
     });
-    const settingsIcon = new St.Icon({ icon_name: 'preferences-system-symbolic', style_class: 'dw-settings-btn' });
+    const settingsIcon = new St.Icon({ icon_name: 'preferences-system-symbolic', style_class: 'dw-settings-icon' });
     settingsBtn.set_child(settingsIcon);
     settingsBtn.connect('clicked', () => onSettings?.());
     outerBox.add_child(settingsBtn);

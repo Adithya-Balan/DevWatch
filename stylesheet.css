@@ -94,15 +94,21 @@
     padding-top: 2px;
 }
 .dw-settings-btn {
+    padding: 6px;
+    border-radius: 50%;
+    transition-duration: 200ms;
+}
+.dw-settings-btn .dw-settings-icon {
     icon-size: 14px;
-    color: #666666;
-    padding: 4px 8px;
-    border-radius: 6px;
+    color: #888888;
 }
 .dw-settings-btn:hover {
-    color: #cccccc;
     background-color: rgba(255,255,255,0.08);
 }
+.dw-settings-btn:hover .dw-settings-icon {
+    color: #dddddd;
+}
+
 
 /* ── Summary quick-action buttons ─────────────────────────────────────────── */
 .dw-summary-action-btn {
