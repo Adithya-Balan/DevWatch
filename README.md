@@ -1,399 +1,335 @@
-# DevWatch
+<p align="center">
+  <h1 align="center">DevWatch</h1>
+  <p align="center"><strong>Your projects. Your ports. Your builds. All in one glance.</strong></p>
+  <p align="center">A GNOME Shell extension that turns your Linux desktop into a developer-aware dashboard.</p>
+</p>
 
-> **Project-aware developer intelligence layer for GNOME Shell.**
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![GNOME Shell](https://img.shields.io/badge/GNOME%20Shell-45%2B-blue.svg)](https://extensions.gnome.org)
-[![Platform](https://img.shields.io/badge/Platform-Linux-orange.svg)](https://www.linux.org)
-[![Status](https://img.shields.io/badge/Status-Active%20Development-yellow.svg)]()
-
-DevWatch transforms GNOME from a generic desktop into a **developer-aware operating layer** that understands your projects, tracks their runtime behavior, and eliminates common workflow friction — directly from the panel.
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="MIT License"></a>
+  <a href="https://extensions.gnome.org"><img src="https://img.shields.io/badge/GNOME%20Shell-45--49-blue.svg" alt="GNOME 45-49"></a>
+  <a href="https://www.linux.org"><img src="https://img.shields.io/badge/Platform-Linux-orange.svg" alt="Linux"></a>
+</p>
 
 ---
 
-## Why DevWatch?
+## What is DevWatch?
 
-Linux developers think in terms of **projects, services, ports, and builds** — not raw PIDs and CPU graphs.
+DevWatch is a **GNOME Shell panel extension** that gives Linux developers a live, project-aware dashboard — right in the top panel.
 
-Yet every existing tool (`htop`, `lsof`, GNOME System Monitor) is **process-oriented**, not **project-oriented**.
+Click **DevWatch** in your panel and instantly see:
 
-DevWatch fills that gap by mapping running system processes back to your development projects, surfacing exactly the runtime intelligence you actually need without ever leaving the desktop.
+- **Running Projects** — which projects are active, how many processes each has, and their memory usage
+- **Open Ports** — every listening port, which project owns it, and a one-click Stop button
+- **Sessions** — save your entire dev environment and resume it later with one click
+- **Build Activity** — live build tracking with elapsed time and CPU usage
+- **Problems** — proactive alerts when RAM or CPU spikes on a project
 
-| Without DevWatch | With DevWatch |
+No terminal commands. No window switching. Everything in one dropdown.
+
+---
+
+## How It Works
+
+DevWatch runs in the background and:
+
+1. **Detects your projects** — reads the focused window's working directory and walks up to the nearest `.git` root
+2. **Scans processes** — reads `/proc` every 10 seconds and groups processes by project
+3. **Monitors ports** — parses `ss -tulnp` output and maps each port back to its owning project
+4. **Tracks builds** — detects 35+ build tools (npm, cargo, make, go, etc.) and records duration, peak CPU, and peak RAM
+5. **Auto-saves your workspace** — every refresh, DevWatch silently saves a "Last Workspace" snapshot so you can resume after a reboot
+
+Everything runs **locally with zero network access**. No cloud, no telemetry, no elevated privileges.
+
+---
+
+## The DevWatch Panel
+
+When you click the **DevWatch** button in your GNOME panel, the dropdown shows:
+
+### Header Bar
+
+![Header Bar](docs/screenshots/header-card.png)
+
+- **Stats line** — live count of projects, ports, and total RAM
+- **Stop All Projects** — kills every process in every detected project
+- **⚙ Settings** — opens the preferences window
+
+### 🔍 Running Projects
+
+Each project is an expandable card:
+
+![Running Projects](docs/screenshots/running-projects.png)
+
+- **Service-oriented** — shows "Python Server" instead of raw `python3.12`
+- **Stop Project** — kills all processes in that project
+- **Open Terminal** — opens `gnome-terminal` at the project's git root
+
+### 🌐 Open Ports
+
+![Open Ports](docs/screenshots/open-ports.png)
+
+- **Dev ports** highlighted with a colored dot (3000, 5173, 8080, etc.)
+- **Project name** shown when a port is linked to a project
+- **Stop** button kills the process on that port
+- **Runtime** shows how long a port has been open
+
+### 📷 Sessions
+
+![Sessions](docs/screenshots/session-workspace.png)
+
+- **Save** — name and save the current workspace
+- **Last Workspace** — automatically saved every refresh (survives reboots)
+- **Resume** — reopens terminals at each saved project root, relaunches services, opens editors
+- **Delete** — remove a saved session
+
+### ⚡ Build Activity
+
+![Build Activity](docs/screenshots/build-activity.png)
+
+- **Live builds** — shows elapsed time and CPU usage for active builds
+- **Recent Builds** — collapsible history with duration and peak CPU per build
+- Detects: `npm`, `cargo`, `make`, `go build`, `gradle`, `webpack`, `vite`, `tsc`, `gcc`, and 25+ more
+- Build history persists across reboots
+
+### ⚠ Problems (conditional)
+
+Only appears when issues are detected:
+
+```
+Problems
+  ⚠ trackitte  using 3.2 GB RAM
+  ⚠ backend  CPU at 92%
+```
+
+### 🔴🟡🟢 Status Dot
+
+The colored dot in the panel gives you a health check at a glance:
+
+| Color | Meaning |
 |---|---|
-| `lsof -i :3000` in terminal | See `Port 3000 → backend-api` in panel |
-| `ps aux \| grep node` | Project cluster with all associated processes |
-| Kill processes one by one | One-click "Clean orphans" |
-| Rebuild whole dev env after reboot | Restore snapshot in seconds |
-| No insight into build resource cost | Last 5 builds: avg time, peak RAM, trend |
+| 🟢 Green | Everything healthy |
+| 🟡 Yellow | High CPU (>80%) or a build pushing above 90% |
+| 🔴 Red | Port conflict detected |
 
 ---
 
-## Features
+## Settings
 
-### Pillar 1 — Project-Aware Process Intelligence
-- Detects active project via focused window, terminal CWD, and `git` root
-- Groups running processes by project directory
-- Shows per-project aggregate CPU, memory, and runtime
+Access preferences via the ⚙ icon in the dropdown, or run:
 
-### Pillar 2 — Intelligent Port & Service Control ✅
-- Live monitoring of all listening ports via `ss -tulnp`
-- Dev ports (3000, 5173, 8080, …) highlighted and separated from system ports
-- Conflict detection with GNOME notifications when a dev port is newly occupied
-- One-click kill, copy PID, open terminal at project root
+```bash
+gnome-extensions prefs devwatch@github.io
+```
 
-### Pillar 3 — Dev Environment Cleanup Engine ✅
-- Detects **zombie** processes (un-reaped, state `Z`)
-- Detects **orphan** dev tools (parent gone, no project root)
-- Detects **idle dev tools** (<0.5% CPU for >10 min, no open port)
-- Per-candidate Kill button; bulk **Clean All** action
-- Status dot turns **red** on zombie/orphan, **yellow** on idle tools
-
-### Pillar 4 — Dev Session Snapshot & Restore ✅
-- **Save Now** captures active projects (git branch), ports, and process names to `~/.local/share/devwatch/snapshots/`
-- **Restore** reopens `gnome-terminal` at each saved project root with the branch in the window title
-- Snapshot list in the panel dropdown — up to 5 shown, max 20 kept on disk
-- Per-snapshot **Delete** button; auto-prunes oldest when limit is reached
-
-### Pillar 5 — Dev Performance Intelligence ✅
-- Detects active builds (`npm`, `cargo`, `make`, `gradle`, `go build`, …)
-- Records peak CPU/RAM per build, trends over the last 5 runs
-- Persists build history across reloads in `~/.local/share/devwatch/build_history.json`
-- Panel shows active build row with live CPU%, completed builds with duration + peak resources
-- Status dot turns **yellow** when an active build is pushing CPU above 90%
-
-### Preferences ✅
-- Full GTK4 / libadwaita preferences window (accessible via GNOME Settings → Extensions → DevWatch → ⚙)
-- **General** — background poll interval (5–60 s, live-applied without reload)
-- **Ports** — toggle system-port visibility; enable/disable conflict notifications
-- **Cleanup** — configure idle-dev detection threshold (1–60 min)
-- **Performance** — set max build history rows shown in the panel (1–20)
-- All settings persist in GSettings (`org.gnome.shell.extensions.devwatch`)
+| Page | Setting | Default | Description |
+|---|---|---|---|
+| **General** | Poll interval | 10s | How often DevWatch scans (5–60 seconds). Changes apply live. |
+| **Ports** | Show system ports | Off | Show all listening ports, not just dev ports |
+| **Ports** | Port conflict notifications | On | Desktop notification when a dev port is newly occupied |
+| **Performance** | Max history rows | 8 | Number of completed builds shown (1–20) |
 
 ---
 
-## Design Principles
+## Keyboard Shortcut
 
-- **Project-centric, not process-centric**
-- **Minimal UI, maximum clarity** — text-first, no graphs unless necessary
-- **Local-only, privacy-first** — no cloud, no telemetry, no analytics
-- **Non-intrusive** — async polling, low memory footprint
-- **Developer workflow acceleration** — reduce terminal round-trips
-
----
-
-## Requirements
-
-| Requirement | Version |
+| Shortcut | Action |
 |---|---|
-| GNOME Shell | 45 or newer |
-| GJS | Bundled with GNOME Shell |
-| `ss` (socket statistics) | Part of `iproute2` |
-| `git` | Any recent version |
+| **Super + D** | Toggle the DevWatch dropdown |
 
 ---
 
 ## Installation
 
-### Local Setup Guide (For Contributors)
+### Requirements
 
-This is the recommended setup flow for open-source contributors on Linux.
+- **GNOME Shell 45–49** (Ubuntu 23.10+, Fedora 39+, Arch with GNOME)
+- `git`, `make`, `ss` (usually pre-installed)
 
-### 1. Install system dependencies
+### Step 1 — Install Dependencies
 
-DevWatch runs as a GNOME Shell extension and relies on a few standard Linux tools.
-
-Ubuntu / Debian:
-
+**Ubuntu / Debian:**
 ```bash
-sudo apt update
-sudo apt install -y git make gettext-base gettext gnome-shell-extension-prefs
+sudo apt update && sudo apt install -y git make gettext gnome-shell-extension-prefs
 ```
 
-Fedora:
-
+**Fedora:**
 ```bash
 sudo dnf install -y git make gettext gnome-extensions-app
 ```
 
-Arch Linux:
-
+**Arch Linux:**
 ```bash
 sudo pacman -S --needed git make gettext gnome-extensions
 ```
 
-Also ensure these are available:
-- GNOME Shell 45+
-- `ss` (usually from `iproute2`)
-- `glib-compile-schemas` (from GLib tools, usually preinstalled with GNOME)
-
-### 2. Clone the project
+### Step 2 — Clone & Install
 
 ```bash
 git clone https://github.com/Adithya-Balan/DevWatch.git
 cd DevWatch
-```
-
-### 3. Link the extension into GNOME
-
-```bash
 make link
 ```
 
-What this does:
-- Symlinks project files into `~/.local/share/gnome-shell/extensions/devwatch@github.io/`
-- Compiles GSettings schemas from `schemas/`
-
-Run `make link` again whenever you add new files.
-
-### 4. Enable the extension
+### Step 3 — Enable
 
 ```bash
 gnome-extensions enable devwatch@github.io
 ```
 
-### 5. Verify it loaded
+> **Wayland users:** Log out and log back in if the extension doesn't appear.
+
+### Step 4 — Verify
 
 ```bash
 gnome-extensions info devwatch@github.io
 ```
 
-Expected result:
-- `Enabled: Yes`
-- `State: ENABLED` (or equivalent healthy state)
-
-You should now see **DevWatch** in the GNOME top panel.
-
-### 6. Test your changes locally
-
-After editing code:
-
-```bash
-make link
-gnome-extensions disable devwatch@github.io
-gnome-extensions enable devwatch@github.io
-```
-
-Watch logs while testing:
-
-```bash
-make log
-# or
-journalctl -f -o cat /usr/bin/gnome-shell
-```
-
-### 7. Wayland note (important)
-
-On GNOME Wayland, Shell module reload can be sticky after syntax/runtime failures.
-If an old error appears to persist:
-- Disable/enable extension again.
-- If still broken, log out and log back in.
-
-### 8. Safe testing in an isolated nested shell
-
-```bash
-make nested
-```
-
-Inside the nested session terminal:
-
-```bash
-gnome-extensions enable devwatch@github.io
-```
-
-This is the safest way to test major UI or extension lifecycle changes.
-
-### 9. Build distributable package (optional)
-
-```bash
-make pack
-unzip -l devwatch@github.io.shell-extension.zip
-```
+You should see `State: ENABLED` and the **DevWatch** button in your top panel.
 
 ---
 
-## Development
+## Usage Examples
 
-### Project Structure
+### See what's running
+
+Click **DevWatch** in the panel → browse your running projects and open ports.
+
+### Stop a port
+
+Open dropdown → find the port under **Open Ports** → click **Stop**.
+
+### Save your workspace before leaving
+
+Open dropdown → expand **Sessions** → click **Save** → type a name → click **Confirm**.
+
+### Resume after a reboot
+
+Open dropdown → expand **Sessions** → click **Resume** on "Last Workspace" or any saved session.
+
+### Open a terminal at a project
+
+Expand a project under **Running Projects** → click **⌨ Open Terminal**.
+
+### Monitor a build
+
+Start a build (`npm run build`, `cargo build`, etc.) → it appears under **Build Activity** with live CPU/elapsed time.
+
+---
+
+## Project Structure
 
 ```
 DevWatch/
-├── extension.js          ← Entry point (ESM, GNOME 45+)
-├── prefs.js              ← GTK4/Adw preferences window
-├── metadata.json         ← Extension identity & GNOME version compatibility
-├── stylesheet.css        ← St widget CSS
-├── Makefile              ← Dev helpers (link, pack, i18n, log, …)
-├── schemas/
-│   └── org.gnome.shell.extensions.devwatch.gschema.xml  ← GSettings schema
-├── po/
-│   ├── POTFILES              ← Sources scanned by xgettext
-│   ├── LINGUAS               ← List of supported locales
-│   └── <lang>.po             ← Per-language translation files (added by translators)
-├── locale/               ← Compiled .mo files (generated by make compile-mo, git-ignored)
-├── ui/
-│   ├── projectSection.js ← Active Projects section (process rows + Open Terminal)
-│   ├── portSection.js    ← Active Ports section (Kill + Copy PID buttons)
-│   ├── alertsSection.js  ← Conflict alerts & immediate actions
-│   ├── healthSummary.js  ← System and project health summary widget
-│   ├── snapshotSection.js← Session Snapshot: Save Now, Restore, Delete rows
-│   └── perfSection.js    ← Build Performance: active builds + run history (Pillar 5)
-├── core/
-│   ├── projectDetector.js← Git root + window focus tracking
-│   ├── processTracker.js ← /proc traversal, process→project mapping
-│   ├── portMonitor.js    ← ss -tulnp parsing + runtime tracking + conflict detection
-│   ├── conflictNotifier.js ← GNOME notifications for newly occupied dev ports
-│   ├── snapshotManager.js← Save/list/load/restore/delete session JSON snapshots
-│   └── buildDetector.js  ← Build detection + peak CPU/RAM tracking + persisted history
-└── utils/
-    ├── subprocess.js     ← Async execCommunicate() helper
-    ├── procReader.js     ← /proc file read helpers
-    └── i18n.js           ← gettext / ngettext re-export for UI modules
-```
-
-### Makefile Targets
-
-```bash
-make link              # Symlink project files into GNOME extension dir (run after adding files)
-make compile-schemas   # Compile GSettings schema (auto-run by make link)
-make enable            # Enable the extension
-make disable           # Disable the extension
-make pack              # Build distributable .zip
-make log               # Tail GNOME Shell logs (your console.log() appears here)
-make nested            # Launch a nested Wayland GNOME session for safe testing
-make status            # Show gnome-extensions info
-```
-
-### Viewing Logs
-
-```bash
-make log
-# or
-journalctl -f -o cat /usr/bin/gnome-shell
-```
-
-### Testing in a Nested Session (Safe — won't crash your desktop)
-
-```bash
-make nested
-# Inside the nested window, open a terminal and:
-gnome-extensions enable devwatch@github.io
+├── extension.js            ← Main entry point
+├── prefs.js                ← Preferences window (GTK4 / Adwaita)
+├── metadata.json           ← Extension identity & GNOME version support
+├── stylesheet.css          ← All UI styling (dark theme, amber accents)
+├── Makefile                ← Build & development commands
+│
+├── core/                   ← Logic layer (no UI code)
+│   ├── projectDetector.js      Detects projects via window focus + git root
+│   ├── processTracker.js       Scans /proc, groups processes by project
+│   ├── portMonitor.js          Parses listening ports from ss
+│   ├── conflictNotifier.js     Desktop notifications for port conflicts
+│   ├── snapshotManager.js      Save / load / restore / delete sessions
+│   └── buildDetector.js        Tracks build tools + CPU/RAM + history
+│
+├── ui/                     ← UI renderers (build panel dropdown sections)
+│   ├── healthSummary.js        Header bar with stats + Stop All + Settings
+│   ├── alertsSection.js        Problems section (high RAM/CPU alerts)
+│   ├── projectSection.js       Running Projects (expandable cards)
+│   ├── portSection.js          Open Ports (project-first rows)
+│   ├── snapshotSection.js      Sessions (Save / Resume / Delete)
+│   └── perfSection.js          Build Activity (live + history)
+│
+├── utils/                  ← Shared helpers
+│   ├── subprocess.js           Async command runner (Gio.Subprocess)
+│   ├── procReader.js           /proc filesystem reader
+│   └── i18n.js                 Translation helpers (gettext)
+│
+├── schemas/                ← GSettings schema (user preferences)
+└── po/                     ← Translation files (i18n ready)
 ```
 
 ---
 
-## Architecture Notes
+## Data Storage
 
-- **Runtime:** GJS (GNOME JavaScript) with native ES Modules (GNOME 45+ ESM syntax)
-- **UI toolkit:** St (Shell Toolkit) + Clutter actors
-- **Async model:** `Gio.Subprocess` with `_promisify` — never blocking the main loop
-- **Data sources:** `/proc` filesystem + `ss`, `git` CLI tools
-- **Storage:** `~/.local/share/devwatch/` — snapshots and build history
-- **No elevated privileges required**
+All data stays **local on your machine**.
+
+```
+~/.local/share/devwatch/
+├── snapshots/                  ← Named session snapshots (JSON)
+├── _last_workspace_.json       ← Auto-saved workspace (updated every refresh)
+└── build_history.json          ← Build performance history
+```
+
+To reset all DevWatch data:
+```bash
+rm -rf ~/.local/share/devwatch/
+```
 
 ---
 
-## Publishing to extensions.gnome.org
+## Makefile Commands
 
-### Pre-submission checklist
-
-- [x] `metadata.json` has `uuid`, `name`, `description`, `shell-version`, `url`, `version-name`, `settings-schema`
-- [x] Extension loads cleanly — `gnome-extensions info devwatch@github.io` shows **ENABLED**
-- [x] No errors in `make log` / `journalctl -o cat /usr/bin/gnome-shell`
-- [x] `prefs.js` preferences window opens without errors
-- [x] `make pack` produces `devwatch@github.io.shell-extension.zip`
-- [ ] Tested on a clean GNOME session (nested with `make nested`)
-- [ ] Screenshot(s) prepared (panel button, dropdown, preferences window)
-
-### Build and submit
-
-```bash
-# 1. Build the zip
-make pack
-
-# 2. Verify the zip contents
-unzip -l devwatch@github.io.shell-extension.zip
-
-# 3. Go to https://extensions.gnome.org/upload/
-#    and upload devwatch@github.io.shell-extension.zip
-```
+| Command | What It Does |
+|---|---|
+| `make link` | Compile schemas + symlink into GNOME extension directory |
+| `make enable` | Enable the extension |
+| `make disable` | Disable the extension |
+| `make pack` | Build a distributable `.zip` for extensions.gnome.org |
+| `make log` | Tail GNOME Shell logs (see `console.log` output) |
+| `make nested` | Launch a safe nested GNOME session for testing |
+| `make status` | Show extension info and state |
 
 ---
 
 ## Contributing
 
-Contributions are welcome! This project is being built iteratively, one pillar at a time.
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for:
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/my-feature`
-3. Commit your changes: `git commit -m 'feat: add my feature'`
-4. Push to the branch: `git push origin feature/my-feature`
-5. Open a Pull Request
+- Development setup
+- Code style guidelines
+- Pull request workflow
+- How to add a translation
 
-Please follow [Conventional Commits](https://www.conventionalcommits.org/) for commit messages.
-
-### Adding a translation
+### Quick Start
 
 ```bash
-# 1. Add your locale code to po/LINGUAS (e.g. 'de' for German)
-echo "de" >> po/LINGUAS
-
-# 2. Create / update the .po file
-make update-po          # creates po/de.po if it doesn’t exist
-
-# 3. Translate the strings in po/de.po using Poedit or any .po editor
-
-# 4. Compile and test
-make compile-mo
+git clone https://github.com/<your-username>/DevWatch.git
+cd DevWatch
 make link
+gnome-extensions enable devwatch@github.io
+make log    # watch for errors
 ```
 
-### Reporting Issues
+### Report a Bug
 
-Use [GitHub Issues](https://github.com/Adithya-Balan/DevWatch/issues). Include:
+Open a [GitHub Issue](https://github.com/Adithya-Balan/DevWatch/issues) with:
 - GNOME Shell version (`gnome-shell --version`)
-- Distribution and version
+- Linux distribution
 - Steps to reproduce
-- Relevant log output (`journalctl -o cat /usr/bin/gnome-shell`)
+- Log output (`make log`)
 
 ---
 
-## Roadmap
+## Technical Details
 
-- [x] Scaffold: Panel button + dropdown (Step 1)
-- [x] `utils/subprocess.js` — async CLI helper (Step 2)
-- [x] `utils/procReader.js` — `/proc` filesystem helpers (Step 3)
-- [x] `core/projectDetector.js` — focus-window → git root detection (Step 4)
-- [x] `core/processTracker.js` — `/proc` scan with project-grouped CPU/RAM (Step 5)
-- [x] `ui/projectSection.js` — Active Projects dropdown renderer (Step 6)
-- [x] **Pillar 1 complete** — Live project-aware process intelligence (Step 7)
-- [x] `core/portMonitor.js` — `ss -tulnp` parser + dev-port detection + conflict tracking (Step 8)
-- [x] `ui/portSection.js` — Active Ports renderer with Kill button (Step 9)
-- [x] `core/conflictNotifier.js` — GNOME notifications on newly occupied dev ports (Step 10)
-- [x] One-click Copy PID + Open Terminal at project root (Step 11)
-- [x] **Pillar 2 complete** — Intelligent port & service control (Step 12)
-- [x] `ui/healthSummary.js` — zombie / orphan / idle-dev candidate detection (Step 13)
-- [x] `ui/alertsSection.js` — Cleanup Candidates renderer with Clean All + Kill (Step 14)
-- [x] Pillar 3 wired into extension.js + status dot updated (Step 15)
-- [x] **Pillar 3 complete** — Dev environment cleanup engine (Step 16)
-- [x] `core/snapshotManager.js` — save/list/load/restore/delete session JSON (Step 17)
-- [x] `ui/snapshotSection.js` — Save Now, Restore & Delete per snapshot row (Step 18)
-- [x] Pillar 4 wired into extension.js (Step 19)
-- [x] **Pillar 4 complete** — Dev session snapshot & restore (Step 20)
-- [x] `core/buildDetector.js` — active build tracking + persisted run history (Step 21)
-- [x] `ui/perfSection.js` — Build Performance renderer: active builds + history rows (Step 22)
-- [x] Pillar 5 wired into extension.js + status dot updated (Step 23)
-- [x] **Pillar 5 complete** — Dev build performance intelligence (Step 24)
-- [x] `schemas/org.gnome.shell.extensions.devwatch.gschema.xml` — GSettings schema (Step 25)
-- [x] `prefs.js` — GTK4/Adw preferences window with 4 pages (Step 26)
-- [x] GSettings wired into all modules — live poll-interval, idle threshold, notify toggle, system-ports toggle, history cap (Step 27)
-- [x] **Preferences complete** — user-configurable settings (Step 28)
-- [x] `utils/i18n.js` + `po/` scaffold + Makefile i18n targets + all UI strings wrapped in `_()` (Step 29)
-- [x] **i18n infrastructure complete** — ready for community translations (Step 29)
-- [x] `make pack` improved — compiles schemas + MO files; EGO submission section added to README (Step 30)
-- [x] **Submission-ready** — `devwatch@github.io.shell-extension.zip` buildable with `make pack` (Step 30)
+- **Runtime:** GJS (GNOME JavaScript) with ES Modules
+- **UI Toolkit:** St (Shell Toolkit) + Clutter actors
+- **Async Model:** `Gio.Subprocess` — never blocks the main loop
+- **Data Sources:** `/proc` filesystem, `ss` command, `git` CLI
+- **Privacy:** 100% local. No network requests, no telemetry, no analytics.
 
 ---
 
 ## License
 
 [MIT](LICENSE) © 2026 [Adithya Balan](https://github.com/Adithya-Balan)
+
+---
+
+<p align="center">
+  <strong>Built for developers who want their desktop to understand their workflow.</strong>
+</p>
