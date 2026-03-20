@@ -93,13 +93,13 @@
     font-weight: bold;
     padding-top: 2px;
 }
-.dw-refresh-btn {
+.dw-settings-btn {
     icon-size: 14px;
     color: #666666;
     padding: 4px 8px;
     border-radius: 6px;
 }
-.dw-refresh-btn:hover {
+.dw-settings-btn:hover {
     color: #cccccc;
     background-color: rgba(255,255,255,0.08);
 }
@@ -446,24 +446,24 @@
 
 /* ── Build section ─────────────────────────────────────────────────────────── */
 .dw-build-active-card {
-    background-color: rgba(120, 174, 237, 0.10);
-    border: 1px solid rgba(120, 174, 237, 0.22);
+    background-color: rgba(120, 174, 237, 0.12);
+    border: 1px solid rgba(120, 174, 237, 0.30);
     border-radius: 10px;
-    padding: 10px 13px;
-    margin-bottom: 7px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
     margin-left: 12px;
     margin-right: 12px;
 }
-.dw-build-active-row { spacing: 10px; y-align: center; }
-.dw-build-active-icon { color: #8cc0ff; icon-size: 13px; margin-right: 5px; y-align: center; }
-.dw-build-active-text { spacing: 3px; }
-.dw-build-status      { font-size: 13px; font-weight: 700; color: #f4f4f4; y-align: center; }
-.dw-build-meta        { font-size: 10px; color: rgba(232, 232, 232, 0.70); y-align: center; padding-top: 0; }
-.dw-build-meta-row    { spacing: 7px; y-align: center; }
-.dw-build-meta-time   { color: rgba(238, 238, 238, 0.90); font-weight: 600; }
-.dw-build-meta-label  { color: rgba(220, 220, 220, 0.72); }
-.dw-build-meta-cpu    { color: rgba(182, 220, 255, 0.90); font-weight: 600; }
-.dw-build-meta-sep    { color: rgba(220, 220, 220, 0.45); font-size: 10px; }
+.dw-build-active-row { y-align: center; }
+.dw-build-active-icon { color: #8cc0ff; icon-size: 14px; margin-right: 10px; }
+.dw-build-active-text { }
+.dw-build-status      { font-size: 13px; font-weight: 600; color: #ffffff; }
+.dw-build-meta        { font-size: 11px; color: rgba(235, 235, 235, 0.70); }
+.dw-build-meta-row    { }
+.dw-build-meta-time   { color: rgba(255, 255, 255, 0.95); font-weight: 600; margin-right: 10px; }
+.dw-build-meta-label  { color: rgba(220, 220, 220, 0.75); margin-right: 4px; }
+.dw-build-meta-cpu    { color: rgba(182, 220, 255, 0.95); font-weight: bold; }
+.dw-build-meta-sep    { color: rgba(240, 240, 240, 0.40); font-size: 12px; margin-right: 4px; }
 .dw-build-empty       { font-size: 11px; color: rgba(240, 240, 240, 0.58); padding: 2px 0; }
 
 /* History sub-menu item tweaks */
@@ -667,7 +667,7 @@
     min-height: 26px;
 }
 .dw-build-active-card {
-    min-height: 44px;
+    min-height: 52px;
 }
 
 .dw-build-hist-row { min-height: 26px; }
