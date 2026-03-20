@@ -19,10 +19,10 @@ const SECTION_TAG = 'devwatch-summary';
  * @param {PopupMenu.PopupMenu}      menu
  * @param {Map<string, object>}      projectMap
  * @param {{ ports: object[] }}      portResult
- * @param {() => void}               onRefresh
+ * @param {() => void}               onSettings
  * @param {() => void}               onStopAll
  */
-export function buildHealthSummary(menu, projectMap, portResult, onRefresh, onStopAll) {
+export function buildHealthSummary(menu, projectMap, portResult, onSettings, onStopAll) {
     clearHealthSummary(menu);
 
     const item = new PopupMenu.PopupBaseMenuItem({ reactive: false });
@@ -70,15 +70,15 @@ export function buildHealthSummary(menu, projectMap, portResult, onRefresh, onSt
 
     outerBox.add_child(infoBox);
 
-    // ── Refresh icon button ────────────────────────────────────────────────
-    const refreshBtn = new St.Button({
+    // ── Settings icon button ────────────────────────────────────────────────
+    const settingsBtn = new St.Button({
         reactive: true, can_focus: true, track_hover: true,
         y_align: Clutter.ActorAlign.START,
     });
-    const refreshIcon = new St.Icon({ icon_name: 'view-refresh-symbolic', style_class: 'dw-refresh-btn' });
-    refreshBtn.set_child(refreshIcon);
-    refreshBtn.connect('clicked', () => onRefresh?.());
-    outerBox.add_child(refreshBtn);
+    const settingsIcon = new St.Icon({ icon_name: 'preferences-system-symbolic', style_class: 'dw-settings-btn' });
+    settingsBtn.set_child(settingsIcon);
+    settingsBtn.connect('clicked', () => onSettings?.());
+    outerBox.add_child(settingsBtn);
 
     item.add_child(outerBox);
     menu.addMenuItem(item);

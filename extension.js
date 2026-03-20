@@ -339,7 +339,7 @@ export default class DevWatchExtension extends Extension {
             this._indicator.menu,
             projectMap,
             portResult,
-            () => this._refresh().catch(e => this._logError(e)),
+            () => { this._indicator.menu.close(); this.openPreferences(); },
             () => this._stopAllProjects()
         );
         // Problems / Alerts section — shown only when issues exist

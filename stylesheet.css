@@ -93,13 +93,13 @@
     font-weight: bold;
     padding-top: 2px;
 }
-.dw-refresh-btn {
+.dw-settings-btn {
     icon-size: 14px;
     color: #666666;
     padding: 4px 8px;
     border-radius: 6px;
 }
-.dw-refresh-btn:hover {
+.dw-settings-btn:hover {
     color: #cccccc;
     background-color: rgba(255,255,255,0.08);
 }
