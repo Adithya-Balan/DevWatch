@@ -81,6 +81,8 @@ function _ensureProjectSectionState(menu) {
         activate: false,
     });
     containerItem._devwatchSection = SECTION_TAG;
+    // Hide the container item by default so there is no gap under the header
+    containerItem.actor.visible = false;
 
     const container = new St.BoxLayout({ vertical: true, x_expand: true });
     const searchEntry = new St.Entry({
@@ -131,12 +133,13 @@ function _ensureProjectSectionState(menu) {
     searchBtn.connect('clicked', () => {
         state._searchEntry.visible = !state._searchEntry.visible;
         if (state._searchEntry.visible) {
+            state._containerItem.actor.visible = true;
             state._searchSlot.set_height(32);
             const clutterText = state._searchEntry.clutter_text ?? state._searchEntry.get_clutter_text();
             global.stage?.set_key_focus?.(clutterText);
             return;
         }
-
+        state._containerItem.actor.visible = false;
         state._searchSlot.set_height(0);
         state._searchQuery = '';
         state._searchEntry.set_text('');
