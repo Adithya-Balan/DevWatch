@@ -67,8 +67,6 @@ export function buildPerfSection(menu, buildResult, maxRows = DEFAULT_MAX_HISTOR
         const histSub = new PopupMenu.PopupSubMenuMenuItem('', false);
         histSub._devwatchSection = SECTION_TAG;
         const histLabel = new St.Label({ text: _('Recent Builds'), style_class: 'dw-build-hist-hdr' });
-        histSub.label.get_parent().insert_child_above(histLabel, histSub.label);
-        histSub.label.hide();
 
         for (const run of shown) {
             histSub.menu.addMenuItem(_buildHistoryRow(run));
@@ -79,6 +77,10 @@ export function buildPerfSection(menu, buildResult, maxRows = DEFAULT_MAX_HISTOR
             histSub.menu.addMenuItem(more);
         }
         menu.addMenuItem(histSub);
+        // Insert label after the submenu has been mounted so it attaches
+        // to the correct parent and does not get reparented on refresh.
+        histSub.label.get_parent().insert_child_above(histLabel, histSub.label);
+        histSub.label.hide();
     }
 
     const sep = new PopupMenu.PopupSeparatorMenuItem();

@@ -212,8 +212,14 @@ function _renderProjectResults(state) {
         scrollView.set_height(INTERNAL_SCROLL_HEIGHT_PX);
 
         const section = new PopupMenu.PopupMenuSection();
-        for (const project of filtered)
-            section.addMenuItem(_buildProjectRow(project, state._pidToPort, scrollView));
+        for (const project of filtered) {
+            const item = _buildProjectRow(project, state._pidToPort, scrollView);
+            section.addMenuItem(item);
+            if (item._devwatchHeader) {
+                item.label.get_parent().insert_child_above(item._devwatchHeader, item.label);
+                item.label.hide();
+            }
+        }
 
         scrollView.set_child(section.actor);
         scrollerItem.add_child(scrollView);
@@ -224,6 +230,10 @@ function _renderProjectResults(state) {
     for (const project of filtered) {
         const item = _buildProjectRow(project, state._pidToPort, null);
         state._resultsBox.addMenuItem(item);
+        if (item._devwatchHeader) {
+            item.label.get_parent().insert_child_above(item._devwatchHeader, item.label);
+            item.label.hide();
+        }
     }
 }
 
@@ -306,8 +316,10 @@ function _buildProjectRow(project, pidToPort, sectionScrollView) {
         style_class: 'dw-project-stats',
     }));
 
-    sub.label.get_parent().insert_child_above(header, sub.label);
-    sub.label.hide();
+    // Defer attaching the header until the submenu has been mounted by
+    // the caller. Storing it here lets the caller insert it after the
+    // item is added to the parent, avoiding reparenting issues on refresh.
+    sub._devwatchHeader = header;
     const services = _toServices(project, pidToPort);
     if (services.length === 0) {
         const empty = new PopupMenu.PopupMenuItem('  No visible services', { reactive: false });
