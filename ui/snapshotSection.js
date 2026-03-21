@@ -19,15 +19,19 @@ const SNAPSHOT_SCROLL_THRESHOLD = 5;
 const SNAPSHOT_SCROLL_HEIGHT_PX = 252;
 
 export function buildSnapshotSection(menu, snapshots, callbacks, lastWorkspace = null) {
-    clearSnapshotSection(menu);
     const { onSave, onRestore, onDelete } = callbacks ?? {};
 
+    clearSnapshotSection(menu);
+
     const sub = new PopupMenu.PopupSubMenuMenuItem('', false);
+    menu._devwatchSnapshotSub = sub;
     sub._devwatchSection = SECTION_TAG;
 
     // ── Header row ────────────────────────────────────────────────────────
     const headerRow = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER });
     headerRow.set_style('margin-top: 8px; margin-bottom: 6px; margin-right: 4px;');
+    headerRow._devwatchSection = SECTION_TAG;
+    menu._devwatchSnapshotHeaderRow = headerRow;
 
     // Give x_expand directly to the label as a GObject property (not CSS).
     // This tells the parent BoxLayout's layout engine to allocate all extra
@@ -49,9 +53,6 @@ export function buildSnapshotSection(menu, snapshots, callbacks, lastWorkspace =
         y_align: Clutter.ActorAlign.CENTER,
     });
     headerRow.add_child(saveBtn);
-
-    sub.label.get_parent().insert_child_above(headerRow, sub.label);
-    sub.label.hide();
 
     // ── Inline naming row ──────────────────────────────────────────────────
     const namingItem = new PopupMenu.PopupMenuItem('', { reactive: false });
@@ -141,6 +142,10 @@ export function buildSnapshotSection(menu, snapshots, callbacks, lastWorkspace =
     });
 
     menu.addMenuItem(sub);
+    // Insert custom header only after the submenu is mounted in the menu,
+    // otherwise GNOME may reparent it unexpectedly on first refresh.
+    sub.label.get_parent().insert_child_above(headerRow, sub.label);
+    sub.label.hide();
     // Give the session sub-menu a consistent top gap so the first card is
     // flush with subsequent ones (sub-menu CSS has padding-top: 0 by default).
     sub.menu.actor.set_style('padding-top: 5px;');
@@ -213,14 +218,18 @@ export function buildSnapshotSection(menu, snapshots, callbacks, lastWorkspace =
 }
 
 export function clearSnapshotSection(menu) {
-    for (const item of menu._getMenuItems().filter(i => i._devwatchSection === SECTION_TAG)) {
-        // If the naming UI is currently open, preserve that exact item to
-        // avoid destroying/recreating it (which causes a visible blink).
-        if (menu._devwatchSnapshotNamingOpen && menu._devwatchNamingItem && item === menu._devwatchNamingItem)
-            continue;
+    // The custom Sessions header row is inserted directly into the sub-menu
+    // title actor hierarchy, so clean it up explicitly during rebuild.
+    if (menu._devwatchSnapshotHeaderRow) {
+        menu._devwatchSnapshotHeaderRow.destroy();
+        menu._devwatchSnapshotHeaderRow = null;
+    }
 
+    for (const item of menu._getMenuItems().filter(i => i._devwatchSection === SECTION_TAG)) {
         item.destroy();
     }
+    menu._devwatchSnapshotSub = null;
+    menu._devwatchNamingItem = null;
 }
 
 function _buildRow(snap, isLastWorkspace, onRestore, onDelete) {

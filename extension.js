@@ -334,6 +334,23 @@ export default class DevWatchExtension extends Extension {
         const showSystemPorts  = this._settings?.get_boolean('show-system-ports') ?? false;
         const maxBuildHistory  = this._settings?.get_int('max-build-history') ?? 8;
 
+        // If Sessions submenu is open (or its naming UI is active), freeze
+        // dynamic menu rebuilding for this tick. Rebuilding only some sections
+        // while Sessions stays mounted can reorder the menu and create visual
+        // jumps/blinking.
+        const snapshotSub = this._indicator.menu._devwatchSnapshotSub;
+        const snapshotLocked = !!(
+            snapshotSub &&
+            this._indicator.menu._getMenuItems().includes(snapshotSub) &&
+            (this._indicator.menu._devwatchSnapshotNamingOpen || snapshotSub.menu?.isOpen)
+        );
+        if (snapshotLocked) {
+            this._updateStatusDot(projectMap, portResult, buildResult);
+            this._snapshotManager?.saveLastWorkspace(projectMap, portResult)
+                .catch(e => this._logError(e));
+            return;
+        }
+
         // Rebuild all sections — health summary first, then content
         buildHealthSummary(
             this._indicator.menu,
