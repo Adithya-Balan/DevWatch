@@ -57,7 +57,7 @@ export function buildSnapshotSection(menu, snapshots, callbacks, lastWorkspace =
     namingItem.add_style_class_name('dw-session-naming-row');
     const namingBox = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER });
     namingBox.set_style('margin-top: 4px; margin-bottom: 8px; margin-right: 6px; margin-left: 6px;');
-    namingBox.spacing = 12;
+    namingBox.spacing = 16;
 
     const entry = new St.Entry({
         hint_text: _('Session name…'),
@@ -79,6 +79,10 @@ export function buildSnapshotSection(menu, snapshots, callbacks, lastWorkspace =
         reactive: true, can_focus: true, track_hover: true,
         y_align: Clutter.ActorAlign.CENTER,
     });
+
+    // Add a little extra breathing room between entry and buttons
+    confirmBtn.set_style('margin-left: 12px;');
+    cancelBtn.set_style('margin-left: 8px;');
 
     namingBox.add_child(entry);
     namingBox.add_child(confirmBtn);
