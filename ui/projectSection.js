@@ -44,12 +44,36 @@ function _ensureProjectSectionState(menu) {
     if (menu._devwatchProjectSectionState)
         return menu._devwatchProjectSectionState;
 
-    const titleItem = new PopupMenu.PopupMenuItem('', { reactive: false });
+    const titleItem = new PopupMenu.PopupBaseMenuItem({
+        reactive: false,
+        can_focus: false,
+        activate: false,
+    });
     titleItem._devwatchSection = SECTION_TAG;
     const titleRow = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER });
-    titleRow.add_child(new St.Label({ text: _('Running Projects'), style_class: 'dw-section-label' }));
+    const titleLabel = new St.Label({
+        text: _('Running Projects'),
+        style_class: 'dw-section-label',
+        x_expand: true,
+        x_align: Clutter.ActorAlign.START,
+    });
+    titleRow.add_child(titleLabel);
+
+    const searchBtn = new St.Button({
+        style_class: 'dw-settings-btn',
+        reactive: true,
+        can_focus: true,
+        track_hover: true,
+        x_align: Clutter.ActorAlign.END,
+        y_align: Clutter.ActorAlign.CENTER,
+    });
+    searchBtn.set_child(new St.Icon({
+        icon_name: 'system-search-symbolic',
+        style_class: 'dw-settings-icon',
+    }));
+    titleRow.add_child(searchBtn);
+
     titleItem.add_child(titleRow);
-    titleItem.label.hide();
 
     const containerItem = new PopupMenu.PopupBaseMenuItem({
         reactive: false,
@@ -64,14 +88,26 @@ function _ensureProjectSectionState(menu) {
         x_expand: true,
         can_focus: true,
         track_hover: false,
+        visible: false,
     });
     // Keep the entry compact so it visually matches section row typography.
     searchEntry.set_style('font-size: 12px; min-height: 24px; padding: 1px 8px; margin: 2px 0 6px 0;');
 
+    // Reserve stable vertical space so toggling does not shift project rows.
+    const searchSlot = new St.Bin({
+        x_expand: true,
+        y_expand: false,
+        x_align: Clutter.ActorAlign.FILL,
+        y_align: Clutter.ActorAlign.START,
+    });
+    searchSlot.set_height(32);
+    searchSlot.set_child(searchEntry);
+
     const resultsBox = new PopupMenu.PopupMenuSection();
     resultsBox._devwatchSection = SECTION_TAG;
-    container.add_child(searchEntry);
+    resultsBox.actor.x_expand = true;
     containerItem.add_child(container);
+    container.add_child(searchSlot);
 
     const separatorItem = new PopupMenu.PopupSeparatorMenuItem();
     separatorItem._devwatchSection = SECTION_TAG;
@@ -82,12 +118,28 @@ function _ensureProjectSectionState(menu) {
         _portResult: null,
         _pidToPort: new Map(),
         _titleItem: titleItem,
+        _titleLabel: titleLabel,
         _containerItem: containerItem,
         _container: container,
+        _searchSlot: searchSlot,
         _searchEntry: searchEntry,
+        _searchButton: searchBtn,
         _resultsBox: resultsBox,
         _separatorItem: separatorItem,
     };
+
+    searchBtn.connect('clicked', () => {
+        state._searchEntry.visible = !state._searchEntry.visible;
+        if (state._searchEntry.visible) {
+            const clutterText = state._searchEntry.clutter_text ?? state._searchEntry.get_clutter_text();
+            global.stage?.set_key_focus?.(clutterText);
+            return;
+        }
+
+        state._searchQuery = '';
+        state._searchEntry.set_text('');
+        _renderProjectResults(state);
+    });
 
     const clutterText = searchEntry.clutter_text ?? searchEntry.get_clutter_text();
     clutterText.connect('text-changed', () => {
