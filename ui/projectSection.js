@@ -28,47 +28,177 @@ const SECTION_TAG = 'devwatch-projects';
 const INTERNAL_SCROLL_THRESHOLD = 5;
 const INTERNAL_SCROLL_HEIGHT_PX = 236;
 
-// ── Public API ─────────────────────────────────────────────────────────────────
+function _withPreservedSearchFocus(state, fn) {
+    const clutterText = state._searchEntry.clutter_text ?? state._searchEntry.get_clutter_text();
+    const stageFocus = global.stage?.get_key_focus?.();
+    const hadFocus = stageFocus === clutterText || stageFocus === state._searchEntry;
 
-export function buildProjectSection(menu, projectMap, portResult) {
-    clearProjectSection(menu);
+    fn();
 
-    // Build a pid→port lookup so we can label processes by port
-    const pidToPort = new Map();
-    for (const p of (portResult?.ports ?? [])) {
-        if (p.pid) pidToPort.set(p.pid, p.port);
+    if (hadFocus && global.stage) {
+        global.stage.set_key_focus(clutterText);
     }
+}
 
-    // Section title
-    const titleItem = new PopupMenu.PopupMenuItem('', { reactive: false });
+function _ensureProjectSectionState(menu) {
+    if (menu._devwatchProjectSectionState)
+        return menu._devwatchProjectSectionState;
+
+    const titleItem = new PopupMenu.PopupBaseMenuItem({
+        reactive: false,
+        can_focus: false,
+        activate: false,
+    });
     titleItem._devwatchSection = SECTION_TAG;
     const titleRow = new St.BoxLayout({ x_expand: true, y_align: Clutter.ActorAlign.CENTER });
-    titleRow.add_child(new St.Label({ text: _('Running Projects'), style_class: 'dw-section-label' }));
-    titleItem.add_child(titleRow);
-    titleItem.label.hide();
-    menu.addMenuItem(titleItem);
+    const titleLabel = new St.Label({
+        text: _('Running Projects'),
+        style_class: 'dw-section-label',
+        x_expand: true,
+        x_align: Clutter.ActorAlign.START,
+    });
+    titleRow.add_child(titleLabel);
 
+    const searchBtn = new St.Button({
+        style_class: 'dw-settings-btn',
+        reactive: true,
+        can_focus: true,
+        track_hover: true,
+        x_align: Clutter.ActorAlign.END,
+        y_align: Clutter.ActorAlign.CENTER,
+    });
+    searchBtn.set_child(new St.Icon({
+        icon_name: 'system-search-symbolic',
+        style_class: 'dw-settings-icon',
+    }));
+    titleRow.add_child(searchBtn);
+
+    titleItem.add_child(titleRow);
+
+    const containerItem = new PopupMenu.PopupBaseMenuItem({
+        reactive: false,
+        can_focus: false,
+        activate: false,
+    });
+    containerItem._devwatchSection = SECTION_TAG;
+    // Hide the container item by default so there is no gap under the header
+    containerItem.actor.visible = false;
+
+    const container = new St.BoxLayout({ vertical: true, x_expand: true });
+    const searchEntry = new St.Entry({
+        hint_text: _('Search projects...'),
+        x_expand: true,
+        can_focus: true,
+        track_hover: false,
+        visible: false,
+    });
+    // Keep the entry compact so it visually matches section row typography.
+    searchEntry.set_style('font-size: 12px; min-height: 24px; padding: 1px 8px; margin: 2px 0 6px 0;');
+
+    // Collapsed by default; expands only when search is shown.
+    const searchSlot = new St.Bin({
+        x_expand: true,
+        y_expand: false,
+        x_align: Clutter.ActorAlign.FILL,
+        y_align: Clutter.ActorAlign.START,
+    });
+    searchSlot.set_height(0);
+    searchSlot.set_child(searchEntry);
+
+    const resultsBox = new PopupMenu.PopupMenuSection();
+    resultsBox._devwatchSection = SECTION_TAG;
+    resultsBox.actor.x_expand = true;
+    containerItem.add_child(container);
+    container.add_child(searchSlot);
+
+    const separatorItem = new PopupMenu.PopupSeparatorMenuItem();
+    separatorItem._devwatchSection = SECTION_TAG;
+
+    const state = {
+        _searchQuery: '',
+        _projectMap: null,
+        _portResult: null,
+        _pidToPort: new Map(),
+        _titleItem: titleItem,
+        _titleLabel: titleLabel,
+        _containerItem: containerItem,
+        _container: container,
+        _searchSlot: searchSlot,
+        _searchEntry: searchEntry,
+        _searchButton: searchBtn,
+        _resultsBox: resultsBox,
+        _separatorItem: separatorItem,
+    };
+
+    searchBtn.connect('clicked', () => {
+        state._searchEntry.visible = !state._searchEntry.visible;
+        if (state._searchEntry.visible) {
+            state._containerItem.actor.visible = true;
+            state._searchSlot.set_height(32);
+            const clutterText = state._searchEntry.clutter_text ?? state._searchEntry.get_clutter_text();
+            global.stage?.set_key_focus?.(clutterText);
+            return;
+        }
+        state._containerItem.actor.visible = false;
+        state._searchSlot.set_height(0);
+        state._searchQuery = '';
+        state._searchEntry.set_text('');
+        _renderProjectResults(state);
+    });
+
+    const clutterText = searchEntry.clutter_text ?? searchEntry.get_clutter_text();
+    clutterText.connect('text-changed', () => {
+        state._searchQuery = (searchEntry.get_text() ?? '').toLowerCase();
+        _withPreservedSearchFocus(state, () => _renderProjectResults(state));
+    });
+
+    menu._devwatchProjectSectionState = state;
+    return state;
+}
+
+function _mountProjectSection(menu, state) {
+    // Reinsert in order on every refresh so this section always appears
+    // beneath summary/alerts, while preserving the same actors and focus state.
+    for (const item of [state._titleItem, state._containerItem, state._resultsBox, state._separatorItem]) {
+        const parent = item.actor.get_parent();
+        if (parent)
+            parent.remove_child(item.actor);
+        menu.addMenuItem(item);
+    }
+}
+
+function _renderProjectResults(state) {
+    for (const item of state._resultsBox._getMenuItems())
+        item.destroy();
+
+    const projectMap = state._projectMap;
     if (!projectMap || projectMap.size === 0) {
         const empty = new PopupMenu.PopupMenuItem(
             _('  Open an editor or terminal to start a project'), { reactive: false }
         );
         empty.label.style_class = 'dw-dim';
-        empty._devwatchSection = SECTION_TAG;
-        menu.addMenuItem(empty);
-        _addSep(menu, SECTION_TAG);
+        state._resultsBox.addMenuItem(empty);
         return;
     }
 
-    const sorted = [...projectMap.values()].sort((a, b) => b.totalCpuPercent - a.totalCpuPercent);
+    const projects = [...projectMap.values()].sort((a, b) => b.totalCpuPercent - a.totalCpuPercent);
+    const filtered = projects.filter(p => (p.name || '').toLowerCase().includes(state._searchQuery));
 
-    if (sorted.length > INTERNAL_SCROLL_THRESHOLD) {
+    if (filtered.length === 0) {
+        const emptySearch = new PopupMenu.PopupMenuItem(_('  No matching projects'), { reactive: false });
+        emptySearch.label.style_class = 'dw-dim';
+        emptySearch.set_style('min-height: 24px;');
+        state._resultsBox.addMenuItem(emptySearch);
+        return;
+    }
+
+    if (filtered.length > INTERNAL_SCROLL_THRESHOLD) {
         const scrollerItem = new PopupMenu.PopupBaseMenuItem({
             reactive: false,
             can_focus: false,
             activate: false,
         });
         scrollerItem.add_style_class_name('dw-section-scroll-item');
-        scrollerItem._devwatchSection = SECTION_TAG;
 
         const scrollView = new St.ScrollView({
             style_class: 'dw-section-scroll dw-section-scroll-projects',
@@ -82,26 +212,58 @@ export function buildProjectSection(menu, projectMap, portResult) {
         scrollView.set_height(INTERNAL_SCROLL_HEIGHT_PX);
 
         const section = new PopupMenu.PopupMenuSection();
-        for (const project of sorted) {
-            section.addMenuItem(_buildProjectRow(project, pidToPort, scrollView));
-        }
+        for (const project of filtered)
+            section.addMenuItem(_buildProjectRow(project, state._pidToPort, scrollView));
 
         scrollView.set_child(section.actor);
         scrollerItem.add_child(scrollView);
-        menu.addMenuItem(scrollerItem);
-    } else {
-        for (const project of sorted) {
-            const item = _buildProjectRow(project, pidToPort, null);
-            item._devwatchSection = SECTION_TAG;
-            menu.addMenuItem(item);
-        }
+        state._resultsBox.addMenuItem(scrollerItem);
+        return;
     }
-    _addSep(menu, SECTION_TAG);
+
+    for (const project of filtered) {
+        const item = _buildProjectRow(project, state._pidToPort, null);
+        state._resultsBox.addMenuItem(item);
+    }
+}
+
+// ── Public API ─────────────────────────────────────────────────────────────────
+
+export function buildProjectSection(menu, projectMap, portResult) {
+    const state = _ensureProjectSectionState(menu);
+    _mountProjectSection(menu, state);
+
+    state._projectMap = projectMap;
+    state._portResult = portResult;
+
+    // Build a pid→port lookup so we can label processes by port
+    const pidToPort = new Map();
+    for (const p of (portResult?.ports ?? [])) {
+        if (p.pid) pidToPort.set(p.pid, p.port);
+    }
+    state._pidToPort = pidToPort;
+
+    _withPreservedSearchFocus(state, () => _renderProjectResults(state));
 }
 
 export function clearProjectSection(menu) {
+    const state = menu._devwatchProjectSectionState;
+    // If the search UI is currently visible, preserve the section's actors
+    // so the search entry and results don't blink during background rebuilds.
+    if (state && state._searchEntry && state._searchEntry.visible) {
+        for (const item of menu._getMenuItems().filter(i => i._devwatchSection === SECTION_TAG)) {
+            if (item === state._titleItem || item === state._containerItem || item === state._resultsBox || item === state._separatorItem)
+                continue;
+
+            item.destroy();
+        }
+        // Keep the persisted state so the section is reused on next build
+        return;
+    }
+
     for (const item of menu._getMenuItems().filter(i => i._devwatchSection === SECTION_TAG))
         item.destroy();
+    delete menu._devwatchProjectSectionState;
 }
 
 // ── Row builders ───────────────────────────────────────────────────────────────
