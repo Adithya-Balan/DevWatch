@@ -23,6 +23,7 @@ import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import { _ } from '../utils/i18n.js';
+import { getProjectDurationsByRootToday } from '../utils/focusAggregator.js';
 
 const SECTION_TAG = 'devwatch-projects';
 const INTERNAL_SCROLL_THRESHOLD = 5;
@@ -213,7 +214,7 @@ function _renderProjectResults(state) {
 
         const section = new PopupMenu.PopupMenuSection();
         for (const project of filtered) {
-            const item = _buildProjectRow(project, state._pidToPort, scrollView);
+            const item = _buildProjectRow(project, state._pidToPort, scrollView, state._durationByRoot);
             section.addMenuItem(item);
             if (item._devwatchHeader) {
                 item.label.get_parent().insert_child_above(item._devwatchHeader, item.label);
@@ -228,7 +229,7 @@ function _renderProjectResults(state) {
     }
 
     for (const project of filtered) {
-        const item = _buildProjectRow(project, state._pidToPort, null);
+        const item = _buildProjectRow(project, state._pidToPort, null, state._durationByRoot);
         state._resultsBox.addMenuItem(item);
         if (item._devwatchHeader) {
             item.label.get_parent().insert_child_above(item._devwatchHeader, item.label);
@@ -241,7 +242,9 @@ function _renderProjectResults(state) {
 
 export function buildProjectSection(menu, projectMap, portResult) {
     const state = _ensureProjectSectionState(menu);
+    state._menu = menu;
     _mountProjectSection(menu, state);
+    state._durationByRoot = menu.isOpen ? getProjectDurationsByRootToday() : new Map();
 
     state._projectMap = projectMap;
     state._portResult = portResult;
@@ -278,7 +281,7 @@ export function clearProjectSection(menu) {
 
 // ── Row builders ───────────────────────────────────────────────────────────────
 
-function _buildProjectRow(project, pidToPort, sectionScrollView) {
+function _buildProjectRow(project, pidToPort, sectionScrollView, durationByRoot = new Map()) {
     const sub = new PopupMenu.PopupSubMenuMenuItem('', true);
     sub.add_style_class_name('dw-project-row-item');
     sub.label.text = '';
@@ -293,6 +296,7 @@ function _buildProjectRow(project, pidToPort, sectionScrollView) {
 
     // ── Level 1 header (vertical: name on L1, stats on L2) ──────────────
     const header = new St.BoxLayout({ vertical: true, x_expand: true });
+    const projectMs = project.root ? (durationByRoot.get(project.root) || 0) : 0;
     header.spacing = 4;
 
     // Line 1: ● Project Name
@@ -308,11 +312,13 @@ function _buildProjectRow(project, pidToPort, sectionScrollView) {
     }));
     header.add_child(nameLine);
 
-    // Line 2: 4 processes · 151 MB  (indented under the dot)
+    // Line 2: 4 processes · 151 MB · 1h 23m  (indented under the dot)
     const ram = _formatKb(project.totalMemKb);
     const count = project.processes.length;
+    const timeLabel = projectMs > 0 ? ` · ${_formatDurationMs(projectMs)}` : '';
+
     header.add_child(new St.Label({
-        text: `${count} ${count === 1 ? 'process' : 'processes'} · ${ram}`,
+        text: `${count} ${count === 1 ? 'process' : 'processes'} · ${ram}${timeLabel}`,
         style_class: 'dw-project-stats',
     }));
 
@@ -320,6 +326,15 @@ function _buildProjectRow(project, pidToPort, sectionScrollView) {
     // the caller. Storing it here lets the caller insert it after the
     // item is added to the parent, avoiding reparenting issues on refresh.
     sub._devwatchHeader = header;
+    const timeInfoItem = new PopupMenu.PopupMenuItem('', { reactive: false });
+    timeInfoItem.add_style_class_name('dw-project-time-row');
+    const timeInfoText = projectMs > 0
+        ? _('Time spent today: %s').format(_formatDurationMs(projectMs))
+        : _('Time spent today: 0m');
+    timeInfoItem.label.text = `  ${timeInfoText}`;
+    timeInfoItem.label.style_class = 'dw-dim';
+    sub.menu.addMenuItem(timeInfoItem);
+
     const services = _toServices(project, pidToPort);
     if (services.length === 0) {
         const empty = new PopupMenu.PopupMenuItem('  No visible services', { reactive: false });
@@ -519,6 +534,15 @@ function _formatKb(kb) {
     return `${(kb / 1024 / 1024).toFixed(1)} GB`;
 }
 function _truncate(s, n) { return s && s.length > n ? s.slice(0, n - 1) + '…' : (s ?? ''); }
+
+function _formatDurationMs(ms) {
+    if (!ms || ms <= 0) return '';
+    const totalMinutes = Math.round(ms / 60000);
+    if (totalMinutes < 60) return `${totalMinutes}m`;
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+    return mins === 0 ? `${hours}h` : `${hours}h ${mins}m`;
+}
 function _addSep(menu, tag) {
     const sep = new PopupMenu.PopupSeparatorMenuItem();
     sep._devwatchSection = tag;
@@ -591,6 +615,7 @@ function _stopProject(project) {
     }
 }
 function _openTerminalAt(root) {
+            const timeInfoItem = new PopupMenu.PopupMenuItem('', { reactive: false });
     const launcher = new Gio.SubprocessLauncher({ flags: Gio.SubprocessFlags.NONE });
     if (root) launcher.set_cwd(root);
     for (const argv of [['gnome-terminal'], ['xterm']]) {

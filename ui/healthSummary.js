@@ -12,6 +12,7 @@
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
+import { _ } from '../utils/i18n.js';
 
 const SECTION_TAG = 'devwatch-summary';
 
@@ -21,8 +22,9 @@ const SECTION_TAG = 'devwatch-summary';
  * @param {{ ports: object[] }}      portResult
  * @param {() => void}               onSettings
  * @param {() => void}               onStopAll
+ * @param {{ totalActiveMs?: number, focusScore?: number }=} focusInfo
  */
-export function buildHealthSummary(menu, projectMap, portResult, onSettings, onStopAll) {
+export function buildHealthSummary(menu, projectMap, portResult, onSettings, onStopAll, focusInfo = {}) {
     clearHealthSummary(menu);
 
     const item = new PopupMenu.PopupBaseMenuItem({ reactive: false });
@@ -42,10 +44,10 @@ export function buildHealthSummary(menu, projectMap, portResult, onSettings, onS
     });
     infoBox.spacing = 0;
 
-    infoBox.add_child(new St.Label({ text: 'DevWatch', style_class: 'dw-summary-title' }));
+    infoBox.add_child(new St.Label({ text: _('DevWatch'), style_class: 'dw-summary-title' }));
 
     // stats line: "4 projects running · 3 ports open · 4.1 GB RAM"
-    const statsLine = _buildStatsLine(projectMap, portResult);
+    const statsLine = _buildStatsLine(projectMap, portResult, focusInfo);
     infoBox.add_child(new St.Label({ text: statsLine, style_class: 'dw-summary-stats' }));
 
     // quick action buttons: [Stop All]
@@ -53,7 +55,7 @@ export function buildHealthSummary(menu, projectMap, portResult, onSettings, onS
     actionsRow.spacing = 8;
 
     const stopAllBtn = new St.Button({
-        label: 'Stop All Projects',
+        label: _('Stop All Projects'),
         style_class: 'dw-summary-action-btn dw-summary-action-danger',
         reactive: true, can_focus: true, track_hover: true,
     });
@@ -97,7 +99,7 @@ export function clearHealthSummary(menu) {
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-function _buildStatsLine(projectMap, portResult) {
+function _buildStatsLine(projectMap, portResult, focusInfo = {}) {
     const projectCount = projectMap?.size ?? 0;
     const portCount    = (portResult?.ports ?? []).filter(p => p.isDevPort).length;
     const totalRamKb   = projectMap
@@ -106,14 +108,29 @@ function _buildStatsLine(projectMap, portResult) {
 
     const parts = [];
     if (projectCount === 0) {
-        parts.push('No projects detected');
+        parts.push(_('No projects detected'));
     } else {
-        parts.push(`${projectCount} project${projectCount !== 1 ? 's' : ''} running`);
+        parts.push(_('%d project(s) running').format(projectCount));
     }
-    if (portCount > 0) parts.push(`${portCount} port${portCount !== 1 ? 's' : ''} open`);
-    if (totalRamKb > 0) parts.push(`${_formatKb(totalRamKb)} RAM`);
+    if (portCount > 0) parts.push(_('%d port(s) open').format(portCount));
+    if (totalRamKb > 0) parts.push(_('%s RAM').format(_formatKb(totalRamKb)));
+
+    const focusMs = focusInfo?.totalActiveMs ?? 0;
+    if (focusMs > 0)
+        parts.push(_('Focus: %s active today').format(_formatDuration(focusMs)));
 
     return parts.join('  ·  ');
+}
+
+function _formatDuration(ms) {
+    const mins = Math.max(0, Math.round(ms / 60000));
+    if (mins < 60)
+        return _('%dm').format(mins);
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    if (m === 0)
+        return _('%dh').format(h);
+    return _('%dh %dm').format(h, m);
 }
 
 function _buildAlertLines(projectMap) {

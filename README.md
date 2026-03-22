@@ -232,6 +232,7 @@ DevWatch/
 │   ├── portMonitor.js          Parses listening ports from ss
 │   ├── conflictNotifier.js     Desktop notifications for port conflicts
 │   ├── snapshotManager.js      Save / load / restore / delete sessions
+│   ├── focusTracker.js         Passive per-poll focus activity logger
 │   └── buildDetector.js        Tracks build tools + CPU/RAM + history
 │
 ├── ui/                     ← UI renderers (build panel dropdown sections)
@@ -240,12 +241,13 @@ DevWatch/
 │   ├── projectSection.js       Running Projects (expandable cards)
 │   ├── portSection.js          Open Ports (project-first rows)
 │   ├── snapshotSection.js      Sessions (Save / Resume / Delete)
-│   └── perfSection.js          Build Activity (live + history)
+│   ├── perfSection.js          Build Activity (live + history)
 │
 ├── utils/                  ← Shared helpers
 │   ├── subprocess.js           Async command runner (Gio.Subprocess)
 │   ├── procReader.js           /proc filesystem reader
-│   └── i18n.js                 Translation helpers (gettext)
+│   ├── i18n.js                 Translation helpers (gettext)
+│   └── focusAggregator.js      Focus summary + timeline aggregation
 │
 ├── schemas/                ← GSettings schema (user preferences)
 └── po/                     ← Translation files (i18n ready)
@@ -261,7 +263,8 @@ All data stays **local on your machine**.
 ~/.local/share/devwatch/
 ├── snapshots/                  ← Named session snapshots (JSON)
 ├── _last_workspace_.json       ← Auto-saved workspace (updated every refresh)
-└── build_history.json          ← Build performance history
+├── build_history.json          ← Build performance history
+└── focus_log_YYYY-MM-DD.json   ← Passive focus ticks (kept for 7 days)
 ```
 
 To reset all DevWatch data:
