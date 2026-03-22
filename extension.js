@@ -457,10 +457,55 @@ export default class DevWatchExtension extends Extension {
      */
     _saveSnapshot(label = 'auto') {
         if (!this._snapshotManager) return;
+        // Optimistic UI: insert a provisional snapshot into the menu immediately
+        try {
+            const nowIso = (new Date()).toISOString();
+            const projCount = this._lastProjectMap ? this._lastProjectMap.size : 0;
+            const svcCount = this._lastProjectMap ? [...this._lastProjectMap.values()].reduce((n, p) => n + (p.processes?.length || 0), 0) : 0;
+            const tempId = `pending-${Date.now()}`;
+            const provisional = {
+                filename: tempId + '.json',
+                label: label || 'auto',
+                savedAt: nowIso,
+                projectCount: projCount,
+                serviceCount: svcCount,
+                _optimistic: true,
+                _tempId: tempId,
+            };
+            this._snapshots = [provisional, ...(this._snapshots ?? [])];
+            // Re-render snapshot section so user sees their saved session instantly
+            if (this._indicator && this._indicator.menu) {
+                try { buildSnapshotSection(this._indicator.menu, this._snapshots ?? [], {
+                    onSave:    (lbl) => this._saveSnapshot(lbl),
+                    onRestore: fn  => this._restoreSnapshot(fn),
+                    onDelete:  fn  => this._deleteSnapshot(fn),
+                }, this._lastWorkspace ?? null); } catch (_) {}
+            }
+        } catch (_) {}
+
+        // Fire actual save in background; when it resolves replace the provisional entry
         this._snapshotManager
             .save(this._lastProjectMap ?? new Map(), this._lastPortResult ?? { ports: [], newPorts: [] }, label)
-            .then(() => this._refresh())
-            .catch(e => this._logError(e));
+            .then(meta => {
+                // Replace provisional snapshot (match by _optimistic flag or tempId)
+                try {
+                    if (!meta) return this._refresh();
+                    const idx = (this._snapshots ?? []).findIndex(s => s._optimistic || s._tempId);
+                    if (idx >= 0) {
+                        this._snapshots.splice(idx, 1, meta);
+                    } else {
+                        this._snapshots = [meta, ...(this._snapshots ?? [])];
+                    }
+                } catch (_) {}
+                return this._refresh();
+            })
+            .catch(e => {
+                // Remove provisional entry and log the error
+                try {
+                    this._snapshots = (this._snapshots ?? []).filter(s => !s._optimistic && !s._tempId);
+                } catch (_) {}
+                this._logError(e);
+            });
     }
 
     /**
