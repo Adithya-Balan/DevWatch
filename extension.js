@@ -353,34 +353,14 @@ export default class DevWatchExtension extends Extension {
         const showSystemPorts  = this._settings?.get_boolean('show-system-ports') ?? false;
         const maxBuildHistory  = this._settings?.get_int('max-build-history') ?? 8;
 
-        // If any interactive submenu or input is visible (Sessions naming,
-        // project search, or any submenu expanded), freeze rebuilding the
-        // entire menu for this tick. Partial rebuilds were causing sections
-        // to reorder and the UI to jump/blink.
+        // If the Sessions naming input is open, avoid full rebuilds for this
+        // tick so the user's typed text/focus remains stable.
         const menu = this._indicator.menu;
-        // Recursively check menu items for any open submenus (covers nested
-        // project rows inside sections which are not top-level items).
-        function anySubmenuOpenInItems(items) {
-            for (const it of items) {
-                try {
-                    if (it.menu && it.menu.isOpen)
-                        return true;
-                    // Some PopupMenu items may themselves contain nested menu
-                    // sections; inspect those recursively when available.
-                    const childItems = (it.menu && it.menu._getMenuItems) ? it.menu._getMenuItems() : (it._getMenuItems ? it._getMenuItems() : []);
-                    if (childItems && childItems.length > 0) {
-                        if (anySubmenuOpenInItems(childItems))
-                            return true;
-                    }
-                } catch (_) { /* defensive: ignore any access errors */ }
-            }
-            return false;
-        }
-        const anySubOpen = anySubmenuOpenInItems(menu._getMenuItems());
-        const projectSearchVisible = !!(menu._devwatchProjectSectionState && menu._devwatchProjectSectionState._searchEntry && menu._devwatchProjectSectionState._searchEntry.visible);
         const sessionNamingOpen = !!menu._devwatchSnapshotNamingOpen;
 
-        if (anySubOpen || projectSearchVisible || sessionNamingOpen) {
+        // Keep data/live project detection flowing even when search/submenus
+        // are open. Only freeze when session naming is active.
+        if (sessionNamingOpen) {
             this._updateStatusDot(projectMap, portResult, buildResult, focusStats.focusScore);
             this._snapshotManager?.saveLastWorkspace(projectMap, portResult)
                 .catch(e => this._logError(e));

@@ -5,6 +5,61 @@
 /* ── Panel menu width ──────────────────────────────────────────────────────── */
 .devwatch-menu {
     min-width: 420px;
+    color: #e9ecf1;
+    background-color: rgba(20, 22, 28, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55);
+}
+
+/* Force dark popup surface even when GNOME is using a light shell theme. */
+.devwatch-menu .popup-menu-content,
+.devwatch-menu .popup-menu,
+.devwatch-menu .popup-sub-menu {
+    background-color: rgba(20, 22, 28, 0.98);
+    color: #e9ecf1;
+}
+
+/* Keep base rows transparent/dark and text consistent inside this menu. */
+.devwatch-menu .popup-menu-item,
+.devwatch-menu .popup-sub-menu-item,
+.devwatch-menu .popup-submenu-menu-item {
+    background-color: transparent;
+    color: #e9ecf1;
+}
+
+.devwatch-menu .popup-separator-menu-item .popup-separator-menu-item-separator {
+    background-color: rgba(255, 255, 255, 0.14);
+}
+
+/* Prevent GNOME shell/theme hover rules from switching our menu to a
+ * light surface. Keep hover states subtle and dark to match the menu. */
+.devwatch-menu .popup-menu-item:hover,
+.devwatch-menu .popup-sub-menu .popup-menu-item:hover,
+.devwatch-menu .popup-sub-menu-item:hover {
+    background-color: rgba(255,255,255,0.02) !important;
+    color: inherit !important;
+}
+
+/* Light themes can style selected/focused/open rows with bright fills.
+ * Force these states to remain dark and non-sticky. */
+.devwatch-menu .popup-menu-item:active,
+.devwatch-menu .popup-menu-item:focus,
+.devwatch-menu .popup-menu-item:selected,
+.devwatch-menu .popup-menu-item:checked,
+.devwatch-menu .popup-sub-menu-item:active,
+.devwatch-menu .popup-sub-menu-item:focus,
+.devwatch-menu .popup-sub-menu-item:selected,
+.devwatch-menu .popup-sub-menu-item:checked,
+.devwatch-menu .popup-submenu-menu-item:active,
+.devwatch-menu .popup-submenu-menu-item:focus,
+.devwatch-menu .popup-submenu-menu-item:selected,
+.devwatch-menu .popup-submenu-menu-item:checked,
+.devwatch-menu .popup-menu-item.selected,
+.devwatch-menu .popup-sub-menu-item.selected,
+.devwatch-menu .popup-submenu-menu-item.selected {
+    background-color: rgba(255,255,255,0.03) !important;
+    color: #e9ecf1 !important;
 }
 
 /* The scroll policy on the internal St.ScrollView is changed to AUTOMATIC
@@ -32,7 +87,8 @@
 }
 
 /* Subtle background on expanded project header (replaces harsh grey)      */
-.devwatch-menu .popup-sub-menu-item:open {
+.devwatch-menu .popup-sub-menu-item:open,
+.devwatch-menu .popup-submenu-menu-item:open {
     background-color: rgba(255,255,255,0.04);
     border-radius: 6px;
 }
@@ -113,7 +169,7 @@
     color: #888888;
 }
 .dw-settings-btn:hover {
-    background-color: rgba(255,255,255,0.08);
+    background-color: rgba(255,255,255,0.03);
 }
 .dw-settings-btn:hover .dw-settings-icon {
     color: #dddddd;
@@ -639,6 +695,50 @@
     background-color: rgba(0,0,0,0.25);
 }
 
+/* Search entry inside Running Projects - force dark background and readable placeholder */
+.devwatch-menu .dw-search-entry {
+    background-color: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    color: #e9ecf1 !important;
+}
+.devwatch-menu .dw-search-entry:focus {
+    background-color: rgba(255,255,255,0.04) !important;
+    border-color: rgba(120,174,237,0.28) !important;
+}
+
+/* Ensure placeholder / hint text is visible in dark mode even when shell tries
+ * to apply light-theme placeholder colors. Use both generic entry selectors
+ * and specific DevWatch entry classes. */
+.devwatch-menu entry::placeholder,
+.devwatch-menu .entry::placeholder,
+.devwatch-menu .st-entry::placeholder,
+.devwatch-menu .dw-search-entry::placeholder,
+.devwatch-menu .dw-session-entry::placeholder,
+.devwatch-menu .dw-snap-entry::placeholder {
+    color: rgba(233,236,241,0.58) !important;
+}
+
+/* GNOME Shell entries often render hint text as a StLabel.hint-text child
+ * instead of placeholder pseudo-elements, so style both forms. */
+.devwatch-menu .dw-search-entry StLabel.hint-text,
+.devwatch-menu .dw-snap-entry StLabel.hint-text,
+.devwatch-menu .dw-session-entry StLabel.hint-text,
+.devwatch-menu .dw-search-entry .hint-text,
+.devwatch-menu .dw-snap-entry .hint-text,
+.devwatch-menu .dw-session-entry .hint-text {
+    color: rgba(233,236,241,0.82) !important;
+}
+
+/* Also force the text color for entries to stay bright for readability */
+.devwatch-menu entry,
+.devwatch-menu .entry,
+.devwatch-menu .st-entry,
+.devwatch-menu .dw-search-entry,
+.devwatch-menu .dw-session-entry,
+.devwatch-menu .dw-snap-entry {
+    color: #e9ecf1 !important;
+}
+
 /* Resume — warm amber CTA */
 .dw-session-btn-resume {
     font-size: 11px;
@@ -658,7 +758,7 @@
 /* Delete icon — clearly visible but secondary */
 .dw-session-btn-icon-danger {
     color: rgba(255,255,255,0.6);
-    background-color: rgba(255,255,255,0.06);
+    background-color: rgba(255,255,255,0.04);
     padding: 4px 10px;
     border-radius: 6px;
 }
@@ -677,7 +777,7 @@
     background-color: rgba(232, 160, 64, 0.1);
 }
 .dw-session-btn-save:hover {
-    background-color: rgba(232, 160, 64, 0.2);
+    background-color: rgba(232, 160, 64, 0.18);
     color: #f7b455;
 }
 .dw-session-btn-cancel {
@@ -686,10 +786,10 @@
     color: #aaaaaa;
     padding: 4px 10px;
     border-radius: 6px;
-    background-color: rgba(255, 255, 255, 0.08);
+    background-color: rgba(255, 255, 255, 0.03);
 }
 .dw-session-btn-cancel:hover {
-    background-color: rgba(255, 255, 255, 0.15);
+    background-color: rgba(255, 255, 255, 0.06);
     color: #eeeeee;
 }
 

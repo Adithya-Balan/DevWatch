@@ -93,8 +93,9 @@ function _ensureProjectSectionState(menu) {
         track_hover: false,
         visible: false,
     });
+    searchEntry.add_style_class_name('dw-search-entry');
     // Keep the entry compact so it visually matches section row typography.
-    searchEntry.set_style('font-size: 12px; min-height: 24px; padding: 1px 8px; margin: 2px 0 6px 0;');
+    searchEntry.set_style('font-size: 12px; min-height: 24px; padding: 1px 8px; margin: 2px 0 6px 0; color: #e9ecf1; hint-text-color: rgba(233,236,241,0.78); background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);');
 
     // Collapsed by default; expands only when search is shown.
     const searchSlot = new St.Bin({

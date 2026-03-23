@@ -91,6 +91,8 @@ export function buildSnapshotSection(menu, snapshots, callbacks, lastWorkspace =
             x_expand: true,
             can_focus: true,
         });
+        // Ensure placeholder and typed text remain visible in light-shell themes
+        entry.set_style('color: #e9ecf1; hint-text-color: rgba(233,236,241,0.78); background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 6px 8px;');
         entry.clutter_text.set_max_length(40);
         // Restore any in-progress text typed before a rebuild
         if (menu._devwatchSnapshotNamingText)
