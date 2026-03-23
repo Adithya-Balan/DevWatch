@@ -40,12 +40,21 @@ export function buildAlertsSection(menu, projectMap, portResult) {
     for (const { text, severity } of alerts) {
         const row = new PopupMenu.PopupMenuItem('', { reactive: false });
         row._devwatchSection = SECTION_TAG;
+        row.add_style_class_name('dw-alert-row-item');
+
+        const icon = new St.Label({
+            text: severity === 'high' ? '⚠' : '•',
+            style_class: severity === 'high' ? 'dw-alert-icon-high' : 'dw-alert-icon-warn',
+            y_align: Clutter.ActorAlign.CENTER,
+        });
+
         const label = new St.Label({
             text,
             style_class: severity === 'high' ? 'dw-alert-row-high' : 'dw-alert-row-warn',
             x_expand: true,
             y_align: Clutter.ActorAlign.CENTER,
         });
+        row.add_child(icon);
         row.add_child(label);
         row.label.hide();
         menu.addMenuItem(row);
@@ -63,15 +72,36 @@ export function clearAlertsSection(menu) {
 
 function _collectAlerts(projectMap, portResult) {
     const alerts = [];
+    const seen = new Set();
+
+    const pushUnique = (projectName, type, text, severity = 'warn') => {
+        const key = `${projectName}|${type}`;
+        if (seen.has(key))
+            return;
+
+        seen.add(key);
+        alerts.push({ text, severity });
+    };
 
     // High RAM / CPU per project
     if (projectMap) {
         for (const p of projectMap.values()) {
+            const projectName = p.name || _('Unknown project');
             const ramGb = (p.totalMemKb ?? 0) / 1024 / 1024;
             if (ramGb > 2) {
-                alerts.push({ text: `⚠  ${p.name}  using ${ramGb.toFixed(1)} GB RAM`, severity: 'warn' });
+                pushUnique(
+                    projectName,
+                    'ram',
+                    _('%s memory usage is high (%s GB).').format(projectName, ramGb.toFixed(1)),
+                    'warn'
+                );
             } else if (p.totalCpuPercent > 80) {
-                alerts.push({ text: `⚠  ${p.name}  CPU at ${p.totalCpuPercent.toFixed(0)}%`, severity: 'warn' });
+                pushUnique(
+                    projectName,
+                    'cpu',
+                    _('%s CPU usage is high (%s%%).').format(projectName, p.totalCpuPercent.toFixed(0)),
+                    'warn'
+                );
             }
         }
     }
