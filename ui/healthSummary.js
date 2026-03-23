@@ -115,10 +115,6 @@ function _buildStatsLine(projectMap, portResult, focusInfo = {}) {
     if (portCount > 0) parts.push(_('%d port(s) open').format(portCount));
     if (totalRamKb > 0) parts.push(_('%s RAM').format(_formatKb(totalRamKb)));
 
-    const focusMs = focusInfo?.totalActiveMs ?? 0;
-    if (focusMs > 0)
-        parts.push(_('Focus: %s active today').format(_formatDuration(focusMs)));
-
     return parts.join('  ·  ');
 }
 
