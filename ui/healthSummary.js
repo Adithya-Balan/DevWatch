@@ -64,12 +64,6 @@ export function buildHealthSummary(menu, projectMap, portResult, onSettings, onS
 
     infoBox.add_child(actionsRow);
 
-    // proactive alert lines: port conflicts, memory spikes, zombies
-    const alertLines = _buildAlertLines(projectMap);
-    for (const line of alertLines) {
-        infoBox.add_child(new St.Label({ text: line, style_class: 'dw-summary-alert' }));
-    }
-
     outerBox.add_child(infoBox);
 
     // ── Settings icon button ────────────────────────────────────────────────
@@ -127,23 +121,6 @@ function _formatDuration(ms) {
     if (m === 0)
         return _('%dh').format(h);
     return _('%dh %dm').format(h, m);
-}
-
-function _buildAlertLines(projectMap) {
-    const alerts = [];
-
-    // High CPU / RAM per project
-    if (projectMap) {
-        for (const p of projectMap.values()) {
-            const ramGb = (p.totalMemKb ?? 0) / 1024 / 1024;
-            if (p.totalCpuPercent > 80)
-                alerts.push(`⚠  ${p.name}  CPU high (${p.totalCpuPercent.toFixed(0)}%)`);
-            else if (ramGb > 2)
-                alerts.push(`⚠  ${p.name}  RAM high (${ramGb.toFixed(1)} GB)`);
-        }
-    }
-
-    return alerts.slice(0, 3);
 }
 
 function _formatKb(kb) {

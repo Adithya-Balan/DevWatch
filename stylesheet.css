@@ -213,9 +213,9 @@
 .dw-alert-section-label {
     font-size: 12px;
     font-weight: 600;
-    color: #f8e45c;
-    padding-top: 10px;
-    padding-bottom: 4px;
+    color: #f0d26f;
+    padding-top: 8px;
+    padding-bottom: 6px;
     x-expand: true;
     y-align: center;
 }
@@ -620,14 +620,35 @@
 /* ── Alert rows ────────────────────────────────────────────────────────────── */
 .dw-alert-row-high {
     font-size: 11px;
-    color: #ed333b;
-    font-weight: bold;
-    padding: 1px 0;
+    color: #f2dc8a;
+    font-weight: 500;
+    y-align: center;
 }
 .dw-alert-row-warn {
     font-size: 11px;
+    color: #f2dc8a;
+    font-weight: 500;
+    y-align: center;
+}
+
+.devwatch-menu .dw-alert-row-item {
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+
+.dw-alert-icon-high,
+.dw-alert-icon-warn {
+    width: 14px;
+    padding-right: 8px;
+    y-align: center;
+}
+
+.dw-alert-icon-high {
     color: #f8e45c;
-    padding: 1px 0;
+}
+
+.dw-alert-icon-warn {
+    color: rgba(248, 228, 92, 0.75);
 }
 
 /* ── Session Cards — warm amber theme ──────────────────────────────────────── */

@@ -377,6 +377,10 @@ export default class DevWatchExtension extends Extension {
             { totalActiveMs: focusStats.totalActiveMs }
         );
 
+        // Problems / Alerts section — shown only when issues exist.
+        // Keep this near the top so warnings are visible immediately.
+        buildAlertsSection(this._indicator.menu, projectMap, portResult);
+
         const durationByRoot = this._focusTracker?.getDurationsByRootToday?.() ?? getProjectDurationsByRootToday();
         buildProjectSection(this._indicator.menu, projectMap, portResult, durationByRoot);
         buildPortSection(
@@ -400,9 +404,6 @@ export default class DevWatchExtension extends Extension {
 
         // Removed separate Focus Timeline UI — per-project totals are displayed
         // inline within the project dropdown (see ui/projectSection.js).
-
-        // Problems section is rendered below Focus Timeline.
-        buildAlertsSection(this._indicator.menu, projectMap, portResult);
 
         // Update status dot colour
         this._updateStatusDot(projectMap, portResult, buildResult, focusStats.focusScore);
