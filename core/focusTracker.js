@@ -140,6 +140,34 @@ export class FocusTracker {
         };
     }
 
+    /**
+     * Return today's cumulative duration per project root using the
+     * in-memory entries (avoids relying on flushed disk logs).
+     */
+    getDurationsByRootToday() {
+        const entries = this._entriesForToday();
+        const tickMs = _inferTickMs(entries, this._pollIntervalMs);
+
+        const byRoot = new Map();
+        const seenRootTick = new Set();
+
+        for (const e of (entries || [])) {
+            const root = e?.r || '';
+            const ts = Number(e?.t) || 0;
+            if (!root || !ts)
+                continue;
+
+            const key = `${root}|${ts}`;
+            if (seenRootTick.has(key))
+                continue;
+            seenRootTick.add(key);
+
+            byRoot.set(root, (byRoot.get(root) || 0) + tickMs);
+        }
+
+        return byRoot;
+    }
+
     // ── Internal ─────────────────────────────────────────────────────────
 
     _entriesForToday() {

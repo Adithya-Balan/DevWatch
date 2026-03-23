@@ -240,11 +240,11 @@ function _renderProjectResults(state) {
 
 // ── Public API ─────────────────────────────────────────────────────────────────
 
-export function buildProjectSection(menu, projectMap, portResult) {
+export function buildProjectSection(menu, projectMap, portResult, durationByRoot = null) {
     const state = _ensureProjectSectionState(menu);
     state._menu = menu;
     _mountProjectSection(menu, state);
-    state._durationByRoot = menu.isOpen ? getProjectDurationsByRootToday() : new Map();
+    state._durationByRoot = durationByRoot ?? (menu.isOpen ? getProjectDurationsByRootToday() : new Map());
 
     state._projectMap = projectMap;
     state._portResult = portResult;

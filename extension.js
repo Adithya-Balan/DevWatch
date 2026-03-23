@@ -47,6 +47,7 @@ import { ConflictNotifier }   from './core/conflictNotifier.js';
 import { SnapshotManager }      from './core/snapshotManager.js';
 import { FocusTracker }         from './core/focusTracker.js';
 import { buildProjectSection }  from './ui/projectSection.js';
+import { getProjectDurationsByRootToday } from './utils/focusAggregator.js';
 import { buildPortSection }     from './ui/portSection.js';
 import { buildSnapshotSection } from './ui/snapshotSection.js';
 import { BuildDetector }         from './core/buildDetector.js';
@@ -396,7 +397,8 @@ export default class DevWatchExtension extends Extension {
             { totalActiveMs: focusStats.totalActiveMs }
         );
 
-        buildProjectSection(this._indicator.menu, projectMap, portResult);
+        const durationByRoot = this._focusTracker?.getDurationsByRootToday?.() ?? getProjectDurationsByRootToday();
+        buildProjectSection(this._indicator.menu, projectMap, portResult, durationByRoot);
         buildPortSection(
             this._indicator.menu,
             portResult,
