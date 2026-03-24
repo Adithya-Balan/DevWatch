@@ -15,6 +15,26 @@
       <range min="5" max="60"/>
     </key>
 
+      <!-- ── Panel placement ─────────────────────────────────────────────── -->
+      <key name="panel-position" type="s">
+        <default>'right'</default>
+        <summary>Panel box placement</summary>
+        <description>
+          Choose where DevWatch appears in the GNOME top bar.
+          Allowed values: left, center, right.
+        </description>
+      </key>
+
+      <key name="panel-index" type="i">
+        <default>0</default>
+        <summary>Panel order index</summary>
+        <description>
+          Position index inside the selected panel box.
+          Lower numbers place DevWatch closer to the start of that box.
+        </description>
+        <range min="0" max="30"/>
+      </key>
+
     <!-- ── Port monitoring ────────────────────────────────────────────── -->
     <key name="show-system-ports" type="b">
       <default>false</default>

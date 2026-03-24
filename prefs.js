@@ -52,6 +52,57 @@ export default class DevWatchPreferences extends ExtensionPreferences {
         settings.bind('poll-interval', pollRow, 'value', 0);
         generalGroup.add(pollRow);
 
+          const placementGroup = new Adw.PreferencesGroup({
+              title: _('Panel Placement'),
+              description: _('Choose where DevWatch appears in the GNOME top bar and its order index.'),
+          });
+          generalPage.add(placementGroup);
+
+          const positionModel = Gtk.StringList.new([
+              _('Left'),
+              _('Center'),
+              _('Right'),
+          ]);
+
+          const positionRow = new Adw.ComboRow({
+              title: _('Panel position'),
+              subtitle: _('Select the top bar area where DevWatch is placed'),
+              model: positionModel,
+          });
+
+          const positionValues = ['left', 'center', 'right'];
+          const currentPosition = settings.get_string('panel-position');
+          const currentPosIndex = Math.max(0, positionValues.indexOf(currentPosition));
+          positionRow.set_selected(currentPosIndex);
+
+          positionRow.connect('notify::selected', () => {
+              const idx = positionRow.get_selected();
+              const value = positionValues[idx] ?? 'right';
+              settings.set_string('panel-position', value);
+          });
+
+          settings.connect('changed::panel-position', () => {
+              const value = settings.get_string('panel-position');
+              const idx = Math.max(0, positionValues.indexOf(value));
+              if (positionRow.get_selected() !== idx)
+                  positionRow.set_selected(idx);
+          });
+
+          placementGroup.add(positionRow);
+
+          const panelIndexRow = new Adw.SpinRow({
+              title: _('Panel index'),
+              subtitle: _('Order inside selected panel area (0 – 30)'),
+              adjustment: new Gtk.Adjustment({
+                  lower: 0,
+                  upper: 30,
+                  step_increment: 1,
+                  page_increment: 5,
+              }),
+          });
+          settings.bind('panel-index', panelIndexRow, 'value', 0);
+          placementGroup.add(panelIndexRow);
+
         // ── Page: Ports ────────────────────────────────────────────────────
         const portsPage = new Adw.PreferencesPage({
             title: _('Ports'),

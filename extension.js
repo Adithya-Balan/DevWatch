@@ -88,6 +88,14 @@ export default class DevWatchExtension extends Extension {
                 this._focusTracker?.setPollIntervalSeconds?.(this._settings.get_int('poll-interval'));
             }
         );
+          this._panelPositionChangedId = this._settings.connect(
+              'changed::panel-position',
+              () => this._applyPanelPlacement()
+          );
+          this._panelIndexChangedId = this._settings.connect(
+              'changed::panel-index',
+              () => this._applyPanelPlacement()
+          );
 
         /** Cached from last _refresh() — used by Save Now button. */
         this._lastProjectMap  = null;
@@ -181,7 +189,12 @@ export default class DevWatchExtension extends Extension {
         );
 
         // ── Add to panel ───────────────────────────────────────────────
-        Main.panel.addToStatusArea(this.uuid, this._indicator, 0, 'right');
+          Main.panel.addToStatusArea(
+              this.uuid,
+              this._indicator,
+              this._getPanelIndex(),
+              this._getPanelPosition()
+          );
 
         // ── Apply panel menu min-width ─────────────────────────────────
         this._indicator.menu.box.add_style_class_name('devwatch-menu');
@@ -264,6 +277,14 @@ export default class DevWatchExtension extends Extension {
             this._settings?.disconnect(this._settingsChangedId);
             this._settingsChangedId = null;
         }
+          if (this._panelPositionChangedId !== null && this._panelPositionChangedId !== undefined) {
+              this._settings?.disconnect(this._panelPositionChangedId);
+              this._panelPositionChangedId = null;
+          }
+          if (this._panelIndexChangedId !== null && this._panelIndexChangedId !== undefined) {
+              this._settings?.disconnect(this._panelIndexChangedId);
+              this._panelIndexChangedId = null;
+          }
         this._settings = null;
 
         // Cancel all in-flight async operations
@@ -432,6 +453,46 @@ export default class DevWatchExtension extends Extension {
             }
         );
         console.log('[DevWatch] Poll interval changed to', interval, 's');
+    }
+
+    _getPanelPosition() {
+        const value = this._settings?.get_string('panel-position') ?? 'right';
+        if (value === 'left' || value === 'center' || value === 'right')
+            return value;
+        return 'right';
+    }
+
+    _getPanelIndex() {
+        const value = this._settings?.get_int('panel-index') ?? 0;
+        return Math.max(0, Math.min(30, value));
+    }
+
+    _getPanelBox(position) {
+        if (position === 'left')
+            return Main.panel._leftBox;
+        if (position === 'center')
+            return Main.panel._centerBox;
+        return Main.panel._rightBox;
+    }
+
+    _applyPanelPlacement() {
+        if (!this._indicator?.container)
+            return;
+
+        const position = this._getPanelPosition();
+        const index = this._getPanelIndex();
+        const targetBox = this._getPanelBox(position);
+        if (!targetBox)
+            return;
+
+        const container = this._indicator.container;
+        const parent = container.get_parent();
+        if (parent)
+            parent.remove_child(container);
+
+        const children = targetBox.get_children();
+        const insertAt = Math.max(0, Math.min(index, children.length));
+        targetBox.insert_child_at_index(container, insertAt);
     }
 
     /**
