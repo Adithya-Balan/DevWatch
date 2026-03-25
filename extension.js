@@ -88,14 +88,20 @@ export default class DevWatchExtension extends Extension {
                 this._focusTracker?.setPollIntervalSeconds?.(this._settings.get_int('poll-interval'));
             }
         );
-          this._panelPositionChangedId = this._settings.connect(
-              'changed::panel-position',
-              () => this._applyPanelPlacement()
-          );
-          this._panelIndexChangedId = this._settings.connect(
-              'changed::panel-index',
-              () => this._applyPanelPlacement()
-          );
+        this._panelPositionChangedId = null;
+        this._panelIndexChangedId = null;
+        if (this._hasSettingKey('panel-position')) {
+            this._panelPositionChangedId = this._settings.connect(
+                'changed::panel-position',
+                () => this._applyPanelPlacement()
+            );
+        }
+        if (this._hasSettingKey('panel-index')) {
+            this._panelIndexChangedId = this._settings.connect(
+                'changed::panel-index',
+                () => this._applyPanelPlacement()
+            );
+        }
 
         /** Cached from last _refresh() — used by Save Now button. */
         this._lastProjectMap  = null;
@@ -456,6 +462,9 @@ export default class DevWatchExtension extends Extension {
     }
 
     _getPanelPosition() {
+        if (!this._hasSettingKey('panel-position'))
+            return 'right';
+
         const value = this._settings?.get_string('panel-position') ?? 'right';
         if (value === 'left' || value === 'center' || value === 'right')
             return value;
@@ -463,8 +472,20 @@ export default class DevWatchExtension extends Extension {
     }
 
     _getPanelIndex() {
+        if (!this._hasSettingKey('panel-index'))
+            return 0;
+
         const value = this._settings?.get_int('panel-index') ?? 0;
         return Math.max(0, Math.min(30, value));
+    }
+
+    _hasSettingKey(key) {
+        try {
+            const schema = this._settings?.settings_schema;
+            return !!schema?.has_key?.(key);
+        } catch (_) {
+            return false;
+        }
     }
 
     _getPanelBox(position) {

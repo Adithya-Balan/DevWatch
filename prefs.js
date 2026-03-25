@@ -58,50 +58,58 @@ export default class DevWatchPreferences extends ExtensionPreferences {
           });
           generalPage.add(placementGroup);
 
-          const positionModel = Gtk.StringList.new([
-              _('Left'),
-              _('Center'),
-              _('Right'),
-          ]);
+        const schema = settings.settings_schema;
+        const hasPanelPosition = !!schema?.has_key?.('panel-position');
+        const hasPanelIndex = !!schema?.has_key?.('panel-index');
 
-          const positionRow = new Adw.ComboRow({
-              title: _('Panel position'),
-              subtitle: _('Select the top bar area where DevWatch is placed'),
-              model: positionModel,
-          });
+        if (hasPanelPosition) {
+            const positionModel = Gtk.StringList.new([
+                _('Left'),
+                _('Center'),
+                _('Right'),
+            ]);
 
-          const positionValues = ['left', 'center', 'right'];
-          const currentPosition = settings.get_string('panel-position');
-          const currentPosIndex = Math.max(0, positionValues.indexOf(currentPosition));
-          positionRow.set_selected(currentPosIndex);
+            const positionRow = new Adw.ComboRow({
+                title: _('Panel position'),
+                subtitle: _('Select the top bar area where DevWatch is placed'),
+                model: positionModel,
+            });
 
-          positionRow.connect('notify::selected', () => {
-              const idx = positionRow.get_selected();
-              const value = positionValues[idx] ?? 'right';
-              settings.set_string('panel-position', value);
-          });
+            const positionValues = ['left', 'center', 'right'];
+            const currentPosition = settings.get_string('panel-position');
+            const currentPosIndex = Math.max(0, positionValues.indexOf(currentPosition));
+            positionRow.set_selected(currentPosIndex);
 
-          settings.connect('changed::panel-position', () => {
-              const value = settings.get_string('panel-position');
-              const idx = Math.max(0, positionValues.indexOf(value));
-              if (positionRow.get_selected() !== idx)
-                  positionRow.set_selected(idx);
-          });
+            positionRow.connect('notify::selected', () => {
+                const idx = positionRow.get_selected();
+                const value = positionValues[idx] ?? 'right';
+                settings.set_string('panel-position', value);
+            });
 
-          placementGroup.add(positionRow);
+            settings.connect('changed::panel-position', () => {
+                const value = settings.get_string('panel-position');
+                const idx = Math.max(0, positionValues.indexOf(value));
+                if (positionRow.get_selected() !== idx)
+                    positionRow.set_selected(idx);
+            });
 
-          const panelIndexRow = new Adw.SpinRow({
-              title: _('Panel index'),
-              subtitle: _('Order inside selected panel area (0 – 30)'),
-              adjustment: new Gtk.Adjustment({
-                  lower: 0,
-                  upper: 30,
-                  step_increment: 1,
-                  page_increment: 5,
-              }),
-          });
-          settings.bind('panel-index', panelIndexRow, 'value', 0);
-          placementGroup.add(panelIndexRow);
+            placementGroup.add(positionRow);
+        }
+
+        if (hasPanelIndex) {
+            const panelIndexRow = new Adw.SpinRow({
+                title: _('Panel index'),
+                subtitle: _('Order inside selected panel area (0 – 30)'),
+                adjustment: new Gtk.Adjustment({
+                    lower: 0,
+                    upper: 30,
+                    step_increment: 1,
+                    page_increment: 5,
+                }),
+            });
+            settings.bind('panel-index', panelIndexRow, 'value', 0);
+            placementGroup.add(panelIndexRow);
+        }
 
         // ── Page: Ports ────────────────────────────────────────────────────
         const portsPage = new Adw.PreferencesPage({
