@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="MIT License"></a>
-  <a href="https://extensions.gnome.org"><img src="https://img.shields.io/badge/GNOME%20Shell-45--49-blue.svg" alt="GNOME 45-49"></a>
+  <a href="https://extensions.gnome.org"><img src="https://img.shields.io/badge/GNOME%20Shell-45--50-blue.svg" alt="GNOME 45-50"></a>
   <a href="https://www.linux.org"><img src="https://img.shields.io/badge/Platform-Linux-orange.svg" alt="Linux"></a>
 </p>
 
@@ -176,7 +176,7 @@ gnome-extensions prefs devwatch@github.io
 
 ### Requirements
 
-- **GNOME Shell 45–49** (Ubuntu 23.10+, Fedora 39+, Arch with GNOME)
+- **GNOME Shell 45–50** (Ubuntu 23.10+, including Ubuntu 26.04.1 LTS, Fedora 39+, Arch with GNOME)
 - `git`, `make`, `ss` (usually pre-installed)
 
 ### Step 1 — Install Dependencies

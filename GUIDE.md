@@ -1,6 +1,6 @@
 # DevWatch — Complete User & Developer Guide
 
-> **Version:** 0.1.0 | **Platform:** GNOME Shell 45–49 | **Date:** March 2026
+> **Version:** 0.1.0 | **Platform:** GNOME Shell 45–50 | **Date:** March 2026
 
 ---
 
@@ -78,7 +78,7 @@ Everything runs **locally, offline, with no elevated privileges**. No cloud, no 
 
 | Tool | Purpose | Install |
 |---|---|---|
-| GNOME Shell 45+ | Runtime | Already on Ubuntu 22.04+ |
+| GNOME Shell 45–50 | Runtime | Includes Ubuntu 26.04.1 LTS |
 | `ss` | Port scanning | `sudo apt install iproute2` |
 | `git` | Project root detection | `sudo apt install git` |
 | `glib-compile-schemas` | Build step | `sudo apt install libglib2.0-dev-bin` |

@@ -18,7 +18,7 @@ If this is your first GNOME extension contribution, start with the quick path:
 
 | Tool | Purpose |
 |---|---|
-| GNOME Shell 45-49 | Runtime for the extension |
+| GNOME Shell 45-50 | Runtime for the extension |
 | `ss` | Port scanning (from `iproute2`) |
 | `git` | Project root detection |
 | `glib-compile-schemas` | Compiles GSettings schemas |
