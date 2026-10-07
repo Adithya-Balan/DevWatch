@@ -23,7 +23,6 @@ import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import { _ } from '../utils/i18n.js';
-import { getProjectDurationsByRootToday } from '../utils/focusAggregator.js';
 
 const SECTION_TAG = 'devwatch-projects';
 const INTERNAL_SCROLL_THRESHOLD = 5;
@@ -251,7 +250,7 @@ export function buildProjectSection(menu, projectMap, portResult, durationByRoot
     const state = _ensureProjectSectionState(menu);
     state._menu = menu;
     _mountProjectSection(menu, state);
-    state._durationByRoot = durationByRoot ?? (menu.isOpen ? getProjectDurationsByRootToday() : new Map());
+    state._durationByRoot = durationByRoot ?? new Map();
 
     state._projectMap = projectMap;
     state._portResult = portResult;

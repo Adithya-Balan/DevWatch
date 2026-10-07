@@ -7,6 +7,7 @@
 
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
+import { loadFileContents } from './subprocess.js';
 
 const DEFAULT_TICK_MS = 10_000;
 
@@ -15,8 +16,8 @@ const DEFAULT_TICK_MS = 10_000;
  * Durations are summed from unique poll ticks and naturally continue when a
  * project is reopened later in the same day.
  */
-export function getProjectDurationsByRootToday() {
-    const { entries } = _loadRangeEntries('today');
+export async function getProjectDurationsByRootToday() {
+    const { entries } = await _loadRangeEntries('today');
     const tickMs = _inferTickMs(entries, DEFAULT_TICK_MS);
 
     const byRoot = new Map();
@@ -39,18 +40,18 @@ export function getProjectDurationsByRootToday() {
     return byRoot;
 }
 
-export function getTodaySummary() {
-    const { entries } = _loadRangeEntries('today');
+export async function getTodaySummary() {
+    const { entries } = await _loadRangeEntries('today');
     return _summaryFromEntries(entries, DEFAULT_TICK_MS);
 }
 
-export function getTimelineBlocks(granularityMinutes = 15) {
-    const { entries, startMs, endMs } = _loadRangeEntries('today');
+export async function getTimelineBlocks(granularityMinutes = 15) {
+    const { entries, startMs, endMs } = await _loadRangeEntries('today');
     return _buildTimeline(entries, startMs, endMs, granularityMinutes);
 }
 
-export function getFocusData(rangeKey = 'today', granularityMinutes = 15, activeRoots = new Set()) {
-    const { entries, startMs, endMs } = _loadRangeEntries(rangeKey);
+export async function getFocusData(rangeKey = 'today', granularityMinutes = 15, activeRoots = new Set()) {
+    const { entries, startMs, endMs } = await _loadRangeEntries(rangeKey);
     const timeline = _buildTimeline(entries, startMs, endMs, granularityMinutes);
     const summary = _summaryFromEntries(entries, DEFAULT_TICK_MS)
         .map(row => ({
@@ -183,7 +184,7 @@ function _buildTimeline(entries, startMs, endMs, granularityMinutes) {
 
 // ── Range loading ─────────────────────────────────────────────────────────
 
-function _loadRangeEntries(rangeKey) {
+async function _loadRangeEntries(rangeKey) {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 
@@ -192,7 +193,7 @@ function _loadRangeEntries(rangeKey) {
         const endMs = todayStart - 1;
         const dayKey = _dateKeyFromMs(startMs);
         return {
-            entries: _readEntriesForDay(dayKey).filter(e => e.t >= startMs && e.t <= endMs),
+            entries: (await _readEntriesForDay(dayKey)).filter(e => e.t >= startMs && e.t <= endMs),
             startMs,
             endMs,
         };
@@ -205,7 +206,7 @@ function _loadRangeEntries(rangeKey) {
         for (let i = 0; i < 7; i++) {
             const ms = startMs + (i * 24 * 60 * 60 * 1000);
             const dayKey = _dateKeyFromMs(ms);
-            entries.push(..._readEntriesForDay(dayKey));
+            entries.push(...await _readEntriesForDay(dayKey));
         }
         return {
             entries: entries.filter(e => e.t >= startMs && e.t <= endMs),
@@ -218,13 +219,13 @@ function _loadRangeEntries(rangeKey) {
     const endMs = Date.now();
     const dayKey = _dateKeyFromMs(startMs);
     return {
-        entries: _readEntriesForDay(dayKey).filter(e => e.t >= startMs && e.t <= endMs),
+        entries: (await _readEntriesForDay(dayKey)).filter(e => e.t >= startMs && e.t <= endMs),
         startMs,
         endMs,
     };
 }
 
-function _readEntriesForDay(dayKey) {
+async function _readEntriesForDay(dayKey) {
     const path = GLib.build_filenamev([
         GLib.get_home_dir(),
         '.local', 'share', 'devwatch',
@@ -236,8 +237,7 @@ function _readEntriesForDay(dayKey) {
         return [];
 
     try {
-        const [, bytes] = file.load_contents(null);
-        const parsed = JSON.parse(new TextDecoder().decode(bytes));
+        const parsed = JSON.parse(await loadFileContents(file));
         return Array.isArray(parsed) ? parsed : [];
     } catch (_) {
         return [];

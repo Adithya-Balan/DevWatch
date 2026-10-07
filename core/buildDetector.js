@@ -42,6 +42,7 @@
 
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
+import { loadFileContents } from '../utils/subprocess.js';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -122,7 +123,7 @@ export class BuildDetector {
     /** @param {Gio.Cancellable} cancellable */
     start(cancellable) {
         this._cancellable = cancellable;
-        this._loadHistory();
+        this._loadHistory().catch(() => {});
     }
 
     stop() {
@@ -171,7 +172,6 @@ export class BuildDetector {
                     finished:    false,
                 };
                 this._active.set(proc.pid, run);
-                console.log(`[DevWatch:BuildDetector] Build started: ${lowerName} (PID ${proc.pid})`);
             }
         }
 
@@ -192,7 +192,6 @@ export class BuildDetector {
             this._history.set(key, bucket);
             historyDirty = true;
 
-            console.log(`[DevWatch:BuildDetector] Build finished: ${run.tool} (PID ${pid}) — ${run.durationMs} ms, peak CPU ${run.peakCpuPct.toFixed(1)}%, peak RAM ${Math.round(run.peakRamKb / 1024)} MB`);
         }
 
         if (historyDirty) this._persistHistory();
@@ -216,20 +215,18 @@ export class BuildDetector {
      * Load persisted history from disk (sync, best-effort).
      * Called once in start().
      */
-    _loadHistory() {
+    async _loadHistory() {
         if (this._historyLoaded) return;
         this._historyLoaded = true;
 
         try {
             const file = Gio.File.new_for_path(this._historyPath);
             if (!file.query_exists(null)) return;
-            const [, contents] = file.load_contents(null);
-            const text = new TextDecoder().decode(contents);
+            const text = await loadFileContents(file, this._cancellable);
             const obj  = JSON.parse(text);
             for (const [key, runs] of Object.entries(obj)) {
                 this._history.set(key, runs);
             }
-            console.log('[DevWatch:BuildDetector] Loaded build history from disk');
         } catch (e) {
             console.warn('[DevWatch:BuildDetector] _loadHistory():', e?.message ?? e);
         }

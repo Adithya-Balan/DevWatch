@@ -47,7 +47,6 @@ export class ConflictNotifier {
 
             try {
                 Main.notify(title, body);
-                console.log(`[DevWatch:ConflictNotifier] Notified: ${title} — ${body}`);
             } catch (e) {
                 console.warn('[DevWatch:ConflictNotifier] Main.notify failed:', e?.message ?? e);
             }

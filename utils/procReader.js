@@ -23,6 +23,7 @@
 
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
+import { loadFileContents } from './subprocess.js';
 
 // ── Sync read ──────────────────────────────────────────────────────────────────
 
@@ -33,12 +34,9 @@ import Gio from 'gi://Gio';
  * @param {string} path  Absolute path, e.g. '/proc/1234/status'
  * @returns {string|null}
  */
-export function readProcFile(path) {
+export async function readProcFile(path) {
     try {
-        const file = Gio.File.new_for_path(path);
-        const [ok, contents] = file.load_contents(null);
-        if (!ok) return null;
-        return new TextDecoder('utf-8').decode(contents);
+        return await loadFileContents(Gio.File.new_for_path(path));
     } catch (_e) {
         // Process likely exited between enumeration and read — silently ignore.
         return null;
@@ -100,8 +98,8 @@ export async function listPids() {
  * @param {number} pid
  * @returns {string[]|null}  e.g. ['node', '/srv/app/server.js', '--port', '3000']
  */
-export function readProcCmdline(pid) {
-    const raw = readProcFile(`/proc/${pid}/cmdline`);
+export async function readProcCmdline(pid) {
+    const raw = await readProcFile(`/proc/${pid}/cmdline`);
     if (raw === null) return null;
     // NUL-separated; split and drop empty tail entries
     const parts = raw.split('\0').filter((p, i, a) => p.length > 0 || i < a.length - 1);
@@ -120,8 +118,8 @@ export function readProcCmdline(pid) {
  * status?.get('VmRSS') // '123456 kB'
  * status?.get('PPid')  // '1'
  */
-export function readProcStatus(pid) {
-    const raw = readProcFile(`/proc/${pid}/status`);
+export async function readProcStatus(pid) {
+    const raw = await readProcFile(`/proc/${pid}/status`);
     if (raw === null) return null;
 
     const map = new Map();
@@ -164,8 +162,8 @@ export function parseProcStatusField(statusMap, field) {
  * @param {number} pid
  * @returns {string[]|null}
  */
-export function readProcStat(pid) {
-    const raw = readProcFile(`/proc/${pid}/stat`);
+export async function readProcStat(pid) {
+    const raw = await readProcFile(`/proc/${pid}/stat`);
     if (raw === null) return null;
 
     // The comm field (index 1) can contain spaces — it is enclosed in parens.
