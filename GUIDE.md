@@ -1,6 +1,6 @@
 # DevWatch — Complete User & Developer Guide
 
-> **Version:** 0.1.0 | **Platform:** GNOME Shell 45–50 | **Date:** March 2026
+> **Version:** 2 | **Platform:** GNOME Shell 45–50 | **Date:** March 2026
 
 ---
 
