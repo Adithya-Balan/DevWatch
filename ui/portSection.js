@@ -33,15 +33,6 @@ export function buildPortSection(menu, scanResult, onKill, showSystemPorts = fal
     menu.addMenuItem(titleItem);
 
     const ports = scanResult?.ports ?? [];
-    if (ports.length === 0) {
-        const empty = new PopupMenu.PopupMenuItem(_('  No open ports detected'), { reactive: false });
-        empty.label.style_class = 'dw-dim';
-        empty._devwatchSection = SECTION_TAG;
-        menu.addMenuItem(empty);
-        _addSep(menu);
-        return;
-    }
-
     const devPorts = ports.filter(p => p.isDevPort).sort((a, b) => a.port - b.port);
     const sysPorts = showSystemPorts
         ? ports.filter(p => !p.isDevPort).sort((a, b) => a.port - b.port)
@@ -52,6 +43,16 @@ export function buildPortSection(menu, scanResult, onKill, showSystemPorts = fal
     const ordered = [...devPorts, ...sysPorts]
         .filter(r => { if (seenPorts.has(r.port)) return false; seenPorts.add(r.port); return true; })
         .slice(0, MAX_PORTS_SHOWN);
+
+    if (ordered.length === 0) {
+        const empty = new PopupMenu.PopupMenuItem(_('  No Ports are currently open'), { reactive: false });
+        empty.label.style_class = 'dw-dim';
+        empty._devwatchSection = SECTION_TAG;
+        menu.addMenuItem(empty);
+        _addSep(menu);
+        return;
+    }
+
     if (ordered.length > INTERNAL_SCROLL_THRESHOLD) {
         const scrollerItem = new PopupMenu.PopupBaseMenuItem({
             reactive: false,

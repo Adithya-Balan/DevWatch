@@ -68,6 +68,7 @@ export default class DevWatchExtension extends Extension {
         this.initTranslations();
         // ── Cancellable — shared across all async operations ───────────
         this._cancellable = new Gio.Cancellable();
+        this._delayedRefreshIds = new Set();
 
         // ── Core modules ───────────────────────────────────────────────
         this._projectDetector   = new ProjectDetector();
@@ -227,8 +228,6 @@ export default class DevWatchExtension extends Extension {
         // Initial data load
         this._refresh().catch(e => this._logError(e));
 
-        console.log('[DevWatch] Enabled — polling every',
-            this._settings.get_int('poll-interval'), 's');
     }
 
     disable() {
@@ -237,6 +236,9 @@ export default class DevWatchExtension extends Extension {
             GLib.Source.remove(this._pollId);
             this._pollId = null;
         }
+        for (const sourceId of this._delayedRefreshIds ?? [])
+            GLib.Source.remove(sourceId);
+        this._delayedRefreshIds?.clear();
 
         // Disconnect menu signal
         if (this._menuOpenSignalId !== null) {
@@ -306,7 +308,6 @@ export default class DevWatchExtension extends Extension {
         this._statusDot = null;
         this._panelLabel = null;
 
-        console.log('[DevWatch] Disabled');
     }
 
     // ── Private ────────────────────────────────────────────────────────────
@@ -352,10 +353,10 @@ export default class DevWatchExtension extends Extension {
             this._settings?.get_int('poll-interval') ?? DEFAULT_POLL_INTERVAL_S
         );
 
-        // Fetch snapshot list + last workspace (synchronous read, best-effort)
+        // Fetch snapshot list + last workspace (best-effort)
         try {
             this._snapshots      = await this._snapshotManager.list();
-            this._lastWorkspace  = this._snapshotManager.loadLastWorkspace();
+            this._lastWorkspace  = await this._snapshotManager.loadLastWorkspace();
         } catch (e) {
             if (!this._isCancelled(e)) this._logError(e);
         }
@@ -414,7 +415,8 @@ export default class DevWatchExtension extends Extension {
         // Keep this near the top so warnings are visible immediately.
         buildAlertsSection(this._indicator.menu, projectMap, portResult);
 
-        const durationByRoot = this._focusTracker?.getDurationsByRootToday?.() ?? getProjectDurationsByRootToday();
+        const durationByRoot = this._focusTracker?.getDurationsByRootToday?.()
+            ?? await getProjectDurationsByRootToday();
         buildProjectSection(this._indicator.menu, projectMap, portResult, durationByRoot);
         buildPortSection(
             this._indicator.menu,
@@ -464,7 +466,6 @@ export default class DevWatchExtension extends Extension {
                 return GLib.SOURCE_CONTINUE;
             }
         );
-        console.log('[DevWatch] Poll interval changed to', interval, 's');
     }
 
     _getPanelPosition() {
@@ -627,12 +628,13 @@ export default class DevWatchExtension extends Extension {
                 flags: Gio.SubprocessFlags.NONE,
             });
             proc.init(null);
-            console.log(`[DevWatch] Sent SIGTERM to PID ${pid} (port ${port})`);
             // Schedule a refresh in 1.5s so the port row disappears promptly
-            GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1500, () => {
+            const sourceId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1500, () => {
+                this._delayedRefreshIds?.delete(sourceId);
                 this._refresh().catch(e => this._logError(e));
                 return GLib.SOURCE_REMOVE;
             });
+            this._delayedRefreshIds?.add(sourceId);
         } catch (e) {
             this._logError(e);
         }

@@ -103,6 +103,26 @@ export async function execLines(argv, cancellable = null) {
         .filter(l => l.length > 0);
 }
 
+/**
+ * Read a file asynchronously and return its contents as UTF-8 text.
+ *
+ * @param {Gio.File} file
+ * @param {Gio.Cancellable|null} cancellable
+ * @returns {Promise<string>}
+ */
+export async function loadFileContents(file, cancellable = null) {
+    const [bytes] = await new Promise((resolve, reject) => {
+        file.load_contents_async(cancellable, (_source, result) => {
+            try {
+                resolve(file.load_contents_finish(result));
+            } catch (e) {
+                reject(e);
+            }
+        });
+    });
+    return new TextDecoder('utf-8').decode(bytes);
+}
+
 // ── Error type guard ───────────────────────────────────────────────────────────
 
 /**

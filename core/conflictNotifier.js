@@ -6,7 +6,7 @@
  * Uses Main.notify(title, body) — the reliable, action-less notification API
  * that every installed GNOME Shell 45+ extension uses.  Richer action-button
  * notifications (via MessageTray.Source) are intentionally deferred to a later
- * step once the exact GNOME 49 constructor signatures can be confirmed.
+ * step once the exact GNOME 50 constructor signatures can be confirmed.
  */
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
@@ -47,7 +47,6 @@ export class ConflictNotifier {
 
             try {
                 Main.notify(title, body);
-                console.log(`[DevWatch:ConflictNotifier] Notified: ${title} — ${body}`);
             } catch (e) {
                 console.warn('[DevWatch:ConflictNotifier] Main.notify failed:', e?.message ?? e);
             }

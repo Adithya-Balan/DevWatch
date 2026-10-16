@@ -29,17 +29,16 @@ compile-schemas:
 	@glib-compile-schemas $(SRC)/schemas/
 	@echo "  Schemas compiled."
 
-# Pack the extension into a distributable zip (compile schemas + MO files first)
+# Pack the extension into a distributable zip (compile schemas first)
 # Output: devwatch@github.io.shell-extension.zip — ready for EGO upload.
 .PHONY: pack
-pack: compile-schemas compile-mo
+pack: compile-schemas
 	gnome-extensions pack \
 	  --force \
 	  --extra-source=ui \
 	  --extra-source=core \
 	  --extra-source=utils \
 	  --extra-source=schemas \
-	  --extra-source=po \
 	  .
 	@echo "  Built: $(UUID).shell-extension.zip"
 

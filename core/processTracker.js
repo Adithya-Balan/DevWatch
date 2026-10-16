@@ -31,6 +31,7 @@ import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
 
 import { execCommunicate } from '../utils/subprocess.js';
+import { loadFileContents } from '../utils/subprocess.js';
 import {
     listPids,
     readProcCmdline,
@@ -99,7 +100,7 @@ export class ProcessTracker {
         this._prevTotalJiffies = 0;
 
         /** Number of logical CPU cores (for CPU % normalisation). */
-        this._numCpus = this._readNumCpus();
+        this._numCpus = 1;
     }
 
     // ── Public API ──────────────────────────────────────────────────────────
@@ -139,17 +140,14 @@ export class ProcessTracker {
      */
     async scan() {
         const pids = await listPids();
+        this._numCpus = await this._readNumCpus();
 
         // Read total system CPU jiffies first (for delta denominator)
-        const totalJiffies = this._readTotalCpuJiffies();
+        const totalJiffies = await this._readTotalCpuJiffies();
 
-        // Process all PIDs concurrently — I/O-free (sync /proc reads are fast)
-        const rawProcesses = [];
-        for (const pid of pids) {
-            if (pid < MIN_USER_PID) continue;
-            const info = this._readProcessInfo(pid);
-            if (info) rawProcesses.push(info);
-        }
+        const rawProcesses = (await Promise.all(
+            pids.filter(pid => pid >= MIN_USER_PID).map(pid => this._readProcessInfo(pid))
+        )).filter(Boolean);
 
         // Compute CPU % using jiffies delta
         const jiffiesDelta = Math.max(totalJiffies - this._prevTotalJiffies, 1);
@@ -222,8 +220,8 @@ export class ProcessTracker {
      * @param {number} pid
      * @returns {ProcessInfo|null}
      */
-    _readProcessInfo(pid) {
-        const statusMap = readProcStatus(pid);
+    async _readProcessInfo(pid) {
+        const statusMap = await readProcStatus(pid);
         if (!statusMap) return null;
 
         const name    = parseProcStatusField(statusMap, 'Name') ?? `[${pid}]`;
@@ -233,15 +231,17 @@ export class ProcessTracker {
         const memKb   = parseInt(vmRssStr, 10) || 0;
 
         // Skip pure kernel threads (no cmdline)
-        const cmdline = readProcCmdline(pid);
+        const cmdline = await readProcCmdline(pid);
         if (!cmdline || cmdline.length === 0) return null;
 
-        const statFields = readProcStat(pid);
+        const statFields = await readProcStat(pid);
         const utime = statFields ? parseInt(statFields[13], 10) || 0 : 0;
         const stime = statFields ? parseInt(statFields[14], 10) || 0 : 0;
 
-        const cwd = readProcCwd(pid); // may be null for short-lived processes
-        const exe = readProcExe(pid); // resolved binary path (follows venv/nvm symlinks)
+        const [cwd, exe] = await Promise.all([
+            readProcCwd(pid),
+            readProcExe(pid),
+        ]);
 
         return {
             pid,
@@ -354,13 +354,9 @@ export class ProcessTracker {
      *
      * @returns {number}
      */
-    _readTotalCpuJiffies() {
+    async _readTotalCpuJiffies() {
         try {
-            const file = Gio.File.new_for_path('/proc/stat');
-            const [ok, contents] = file.load_contents(null);
-            if (!ok) return this._prevTotalJiffies;
-
-            const text = new TextDecoder('utf-8').decode(contents);
+            const text = await loadFileContents(Gio.File.new_for_path('/proc/stat'));
             const cpuLine = text.split('\n').find(l => l.startsWith('cpu '));
             if (!cpuLine) return this._prevTotalJiffies;
 
@@ -375,12 +371,9 @@ export class ProcessTracker {
      * Count logical CPUs from /proc/cpuinfo.
      * @returns {number}
      */
-    _readNumCpus() {
+    async _readNumCpus() {
         try {
-            const file = Gio.File.new_for_path('/proc/cpuinfo');
-            const [ok, contents] = file.load_contents(null);
-            if (!ok) return 1;
-            const text = new TextDecoder('utf-8').decode(contents);
+            const text = await loadFileContents(Gio.File.new_for_path('/proc/cpuinfo'));
             return (text.match(/^processor\s*:/gm) ?? []).length || 1;
         } catch (_e) {
             return 1;

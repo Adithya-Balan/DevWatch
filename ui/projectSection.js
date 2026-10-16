@@ -23,7 +23,6 @@ import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import { _ } from '../utils/i18n.js';
-import { getProjectDurationsByRootToday } from '../utils/focusAggregator.js';
 
 const SECTION_TAG = 'devwatch-projects';
 const INTERNAL_SCROLL_THRESHOLD = 5;
@@ -251,7 +250,7 @@ export function buildProjectSection(menu, projectMap, portResult, durationByRoot
     const state = _ensureProjectSectionState(menu);
     state._menu = menu;
     _mountProjectSection(menu, state);
-    state._durationByRoot = durationByRoot ?? (menu.isOpen ? getProjectDurationsByRootToday() : new Map());
+    state._durationByRoot = durationByRoot ?? new Map();
 
     state._projectMap = projectMap;
     state._portResult = portResult;
@@ -415,8 +414,9 @@ function _buildServiceRow(svc) {
         }));
     }
 
-    // Combined "Python Server · Port 8000" — single label avoids layout gaps
-    const text = svc.port ? `${svc.displayName}  ·  Port ${svc.port}` : svc.displayName;
+    // Always include PID so similarly named services are distinguishable.
+    const baseText = `${svc.displayName} (${svc.pid})`;
+    const text = svc.port ? `${baseText}  ·  Port ${svc.port}` : baseText;
     row.add_child(new St.Label({
         text,
         style_class: 'dw-service-row',
@@ -447,6 +447,7 @@ function _toServices(project, pidToPort) {
     for (const p of withPort) {
         result.push({
             displayName: _toServiceLabel(p.name),
+            pid: p.pid,
             port: pidToPort.get(p.pid),
             stateSymbol: _stateSymbol(p.state),
             stateClass:  _stateClass(p.state),
@@ -463,6 +464,7 @@ function _toServices(project, pidToPort) {
     for (const p of rest) {
         result.push({
             displayName: _toServiceLabel(p.name),
+            pid: p.pid,
             port: null,
             stateSymbol: _stateSymbol(p.state),
             stateClass:  _stateClass(p.state),

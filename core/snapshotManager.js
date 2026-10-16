@@ -68,6 +68,7 @@ import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
 
 import { execCommunicate, isCancelledError } from '../utils/subprocess.js';
+import { loadFileContents } from '../utils/subprocess.js';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -92,6 +93,7 @@ export class SnapshotManager {
             GLib.get_home_dir(),
             '.local', 'share', 'devwatch', 'snapshots',
         ]);
+        this._timeoutIds = new Set();
     }
 
     // ── Public API ──────────────────────────────────────────────────────────
@@ -104,6 +106,9 @@ export class SnapshotManager {
 
     stop() {
         this._cancellable = null;
+        for (const sourceId of this._timeoutIds)
+            GLib.Source.remove(sourceId);
+        this._timeoutIds.clear();
     }
 
     /**
@@ -125,7 +130,6 @@ export class SnapshotManager {
         await this._writeJson(filename, snapshot);
         await this._pruneOldSnapshots();
 
-        console.log(`[DevWatch:SnapshotManager] Saved snapshot: ${filename}`);
         const totalServices = snapshot.projects.reduce((n, p) => n + (p.services?.length ?? 0), 0);
         return { filename, label, savedAt: isoNow, projectCount: snapshot.projects.length, serviceCount: totalServices };
     }
@@ -145,7 +149,6 @@ export class SnapshotManager {
         try {
             const snapshot = await this._buildSnapshot(projectMap, portResult, LAST_WORKSPACE_LABEL);
             await this._writeJson(LAST_WORKSPACE_FILENAME, snapshot);
-            console.log('[DevWatch:SnapshotManager] Auto-saved last workspace');
         } catch (e) {
             console.warn('[DevWatch:SnapshotManager] saveLastWorkspace() failed:', e.message);
         }
@@ -155,11 +158,10 @@ export class SnapshotManager {
      * Load the last workspace snapshot, or null if none exists.
      * @returns {object|null}
      */
-    loadLastWorkspace() {
+    async loadLastWorkspace() {
         const path = GLib.build_filenamev([this._snapshotDir, LAST_WORKSPACE_FILENAME]);
         try {
-            const [, raw] = Gio.File.new_for_path(path).load_contents(null);
-            return JSON.parse(new TextDecoder().decode(raw));
+            return JSON.parse(await loadFileContents(Gio.File.new_for_path(path)));
         } catch (_) {
             return null;
         }
@@ -259,13 +261,12 @@ export class SnapshotManager {
     async restore(snapshot) {
         const projects = snapshot?.projects ?? [];
         if (projects.length === 0) {
-            console.log('[DevWatch:SnapshotManager] restore(): snapshot has no projects');
             return { launched: 0, skipped: 0 };
         }
 
         // Snapshot of currently listening ports — lets us skip services that
         // are already running so we never create duplicate processes.
-        const occupiedPorts = this._readOccupiedPorts();
+        const occupiedPorts = await this._readOccupiedPorts();
 
         let launched = 0;
         let skipped  = 0;
@@ -276,14 +277,12 @@ export class SnapshotManager {
 
             // Skip virtual-envs, IDE extension dirs, package dirs, etc.
             if (_isNonProjectRoot(proj.root)) {
-                console.log(`[DevWatch:SnapshotManager] restore(): skipping non-project root: ${proj.root}`);
                 continue;
             }
 
             // Verify the directory still exists
             const dir = Gio.File.new_for_path(proj.root);
             if (!dir.query_exists(null)) {
-                console.warn(`[DevWatch:SnapshotManager] restore(): root gone: ${proj.root}`);
                 continue;
             }
 
@@ -293,10 +292,6 @@ export class SnapshotManager {
             const runnableServices = [];
             for (const svc of services) {
                 if (svc.port && occupiedPorts.has(svc.port)) {
-                    console.log(
-                        `[DevWatch:SnapshotManager] restore(): port ${svc.port} already in use,` +
-                        ` skipping: ${svc.cmdline}`
-                    );
                     skipped++;
                 } else {
                     runnableServices.push(svc);
@@ -369,7 +364,7 @@ export class SnapshotManager {
 
             if (vscodeExec) {
                 if (runnableServices.length > 0)
-                    this._writeVscodeTasks(proj, runnableServices, vscodeExec);
+                    await this._writeVscodeTasks(proj, runnableServices, vscodeExec);
                 try {
                     const launcher = new Gio.SubprocessLauncher({ flags: Gio.SubprocessFlags.NONE });
                     launcher.set_environ(GLib.get_environ()); // required: passes WAYLAND_DISPLAY / DISPLAY
@@ -377,14 +372,12 @@ export class SnapshotManager {
                     // already has this folder open.  This guarantees the folderOpen
                     // event fires so runOn:"folderOpen" tasks actually run.
                     launcher.spawnv([vscodeExec, '--new-window', proj.root]);
-                    console.log(`[DevWatch:SnapshotManager] Opened VS Code: ${proj.root}`);
                     launched += runnableServices.length;
                     editors++;
                     for (const svc of runnableServices)
                         if (svc.port && svc.port >= 1024) this._openBrowserTab(svc.port);
                     continue; // fully handled — skip fallback below
                 } catch (e) {
-                    console.warn('[DevWatch:SnapshotManager] VS Code launch failed:', e.message);
                     // fall through to system-terminal fallback
                 }
             }
@@ -410,9 +403,6 @@ export class SnapshotManager {
             }
         }
 
-        console.log(
-            `[DevWatch:SnapshotManager] restore(): launched=${launched} skipped=${skipped} editors=${editors}`
-        );
         return { launched, skipped, editors };
     }
 
@@ -453,12 +443,8 @@ export class SnapshotManager {
                 launcher.set_environ(GLib.get_environ());
                 launcher.set_cwd(cwd);
                 launcher.spawnv(argv);
-                console.log(`[DevWatch:SnapshotManager] Launched service: ${svc.cmdline} (${cwd})`);
                 return;
             } catch (e) {
-                console.warn(
-                    `[DevWatch:SnapshotManager] _launchService via ${argv[0]} failed:`, e.message
-                );
             }
         }
     }
@@ -473,9 +459,7 @@ export class SnapshotManager {
             const launcher = new Gio.SubprocessLauncher({ flags: Gio.SubprocessFlags.NONE });
             launcher.set_environ(GLib.get_environ());
             launcher.spawnv([ed.exec, projectRoot]);
-            console.log(`[DevWatch:SnapshotManager] Opened editor: ${ed.exec} ${projectRoot}`);
         } catch (e) {
-            console.warn(`[DevWatch:SnapshotManager] _launchEditor(${ed.exec}) failed:`, e.message);
         }
     }
 
@@ -492,7 +476,7 @@ export class SnapshotManager {
      * @param {Array<{ cmdline: string, cwd: string }>} services
      * @param {string|null} vscodeExec  Resolved VS Code executable path.
      */
-    _writeVscodeTasks(proj, services, vscodeExec = null) {
+    async _writeVscodeTasks(proj, services, vscodeExec = null) {
         const vscodeDir = GLib.build_filenamev([proj.root, '.vscode']);
         try {
             Gio.File.new_for_path(vscodeDir).make_directory_with_parents(null);
@@ -503,8 +487,7 @@ export class SnapshotManager {
 
         let existing = { version: '2.0.0', tasks: [] };
         try {
-            const [, raw] = Gio.File.new_for_path(tasksPath).load_contents(null);
-            const parsed  = JSON.parse(new TextDecoder().decode(raw));
+            const parsed  = JSON.parse(await loadFileContents(Gio.File.new_for_path(tasksPath)));
             existing = parsed;
             if (!Array.isArray(existing.tasks)) existing.tasks = [];
             existing.tasks = existing.tasks.filter(t => !String(t.label ?? '').startsWith('DevWatch['));
@@ -529,9 +512,7 @@ export class SnapshotManager {
             const file  = Gio.File.new_for_path(tasksPath);
             const bytes = new TextEncoder().encode(JSON.stringify(existing, null, 2));
             file.replace_contents(bytes, null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null);
-            console.log(`[DevWatch:SnapshotManager] Wrote VS Code tasks: ${tasksPath}`);
         } catch (e) {
-            console.warn('[DevWatch:SnapshotManager] _writeVscodeTasks (tasks.json) failed:', e.message);
         }
 
         // ── User-level settings — task.allowAutomaticTasks=on ───────────────────
@@ -552,8 +533,7 @@ export class SnapshotManager {
 
         let userSettings = {};
         try {
-            const [, raw] = Gio.File.new_for_path(userSettingsPath).load_contents(null);
-            userSettings = JSON.parse(new TextDecoder().decode(raw));
+            userSettings = JSON.parse(await loadFileContents(Gio.File.new_for_path(userSettingsPath)));
             if (typeof userSettings !== 'object' || Array.isArray(userSettings)) userSettings = {};
         } catch (_) { /* file may not exist yet */ }
 
@@ -570,9 +550,7 @@ export class SnapshotManager {
                 const file  = Gio.File.new_for_path(userSettingsPath);
                 const bytes = new TextEncoder().encode(JSON.stringify(userSettings, null, 2));
                 file.replace_contents(bytes, null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null);
-                console.log(`[DevWatch:SnapshotManager] Set task.allowAutomaticTasks=on in ${userSettingsPath}`);
             } catch (e) {
-                console.warn('[DevWatch:SnapshotManager] _writeVscodeTasks (user settings) failed:', e.message);
             }
         }
     }
@@ -584,17 +562,17 @@ export class SnapshotManager {
      * @param {number} port
      */
     _openBrowserTab(port) {
-        GLib.timeout_add(GLib.PRIORITY_DEFAULT, 2500, () => {
+        const sourceId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 2500, () => {
+            this._timeoutIds.delete(sourceId);
             try {
                 const launcher = new Gio.SubprocessLauncher({ flags: Gio.SubprocessFlags.NONE });
                 launcher.set_environ(GLib.get_environ());
                 launcher.spawnv(['xdg-open', `http://localhost:${port}`]);
-                console.log(`[DevWatch:SnapshotManager] Opened browser tab: http://localhost:${port}`);
             } catch (e) {
-                console.warn('[DevWatch:SnapshotManager] _openBrowserTab failed:', e.message);
             }
             return GLib.SOURCE_REMOVE;
         });
+        this._timeoutIds.add(sourceId);
     }
 
     /**
@@ -617,7 +595,6 @@ export class SnapshotManager {
                 const launcher = new Gio.SubprocessLauncher({ flags: Gio.SubprocessFlags.NONE });
                 launcher.set_environ(GLib.get_environ());
                 launcher.spawnv(argv);
-                console.log(`[DevWatch:SnapshotManager] Opened terminal: ${title}`);
                 return;
             } catch (_) { /* try next */ }
         }
@@ -628,12 +605,11 @@ export class SnapshotManager {
      * This is a synchronous, zero-subprocess check — safe to call before spawning.
      * @returns {Set<number>}
      */
-    _readOccupiedPorts() {
+    async _readOccupiedPorts() {
         const occupied = new Set();
         for (const procFile of ['/proc/net/tcp', '/proc/net/tcp6']) {
             try {
-                const [, raw] = Gio.File.new_for_path(procFile).load_contents(null);
-                const text = new TextDecoder().decode(raw);
+                const text = await loadFileContents(Gio.File.new_for_path(procFile));
                 for (const line of text.split('\n').slice(1)) {
                     const cols = line.trim().split(/\s+/);
                     if (cols.length < 4) continue;
@@ -657,7 +633,6 @@ export class SnapshotManager {
         const file = Gio.File.new_for_path(path);
         try {
             await _deleteFileAsync(file, this._cancellable);
-            console.log(`[DevWatch:SnapshotManager] Deleted: ${filename}`);
             return true;
         } catch (e) {
             console.error('[DevWatch:SnapshotManager] delete() failed:', e.message);
